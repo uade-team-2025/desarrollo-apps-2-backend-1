@@ -13,16 +13,19 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     try {
       const url = this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
+      this.logger.log(`Conectando a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`);
+      
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
       
       // Declarar exchange si no existe
       await this.channel.assertExchange('mongodb_changes', 'topic', { durable: true });
       
-      this.logger.log('RabbitMQ Publisher conectado');
+      this.logger.log('RabbitMQ Publisher conectado exitosamente');
     } catch (error) {
-      this.logger.error('Error conectando a RabbitMQ:', error);
-      throw error;
+      this.logger.error('Error conectando a RabbitMQ - CDC no estará disponible:', error.message);
+      // No lanzar error para que la app siga funcionando aunque RabbitMQ no esté disponible
+      // throw error;
     }
   }
 
