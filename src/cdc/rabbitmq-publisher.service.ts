@@ -23,7 +23,17 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       await this.channel.assertExchange('mongodb.culturalplaces.changes', 'topic', { durable: true });
       await this.channel.assertExchange('mongodb.tickets.changes', 'topic', { durable: true });
       
-      this.logger.log('RabbitMQ Publisher conectado exitosamente');
+      // Crear colas para cada exchange
+      await this.channel.assertQueue('mongodb.events.queue', { durable: true });
+      await this.channel.assertQueue('mongodb.culturalplaces.queue', { durable: true });
+      await this.channel.assertQueue('mongodb.tickets.queue', { durable: true });
+      
+      // Vincular colas a exchanges
+      await this.channel.bindQueue('mongodb.events.queue', 'mongodb.events.changes', '');
+      await this.channel.bindQueue('mongodb.culturalplaces.queue', 'mongodb.culturalplaces.changes', '');
+      await this.channel.bindQueue('mongodb.tickets.queue', 'mongodb.tickets.changes', '');
+      
+      this.logger.log('RabbitMQ Publisher conectado exitosamente - Exchanges y colas creados');
     } catch (error) {
       this.logger.error('Error conectando a RabbitMQ - CDC no estará disponible:', error.message);
       // No lanzar error para que la app siga funcionando aunque RabbitMQ no esté disponible
