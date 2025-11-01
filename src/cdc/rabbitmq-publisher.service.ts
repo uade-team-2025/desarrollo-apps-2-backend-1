@@ -18,8 +18,10 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
       
-      // Declarar exchange si no existe
-      await this.channel.assertExchange('mongodb_changes', 'topic', { durable: true });
+      // Declarar un exchange por cada entidad
+      await this.channel.assertExchange('mongodb.events.changes', 'topic', { durable: true });
+      await this.channel.assertExchange('mongodb.culturalplaces.changes', 'topic', { durable: true });
+      await this.channel.assertExchange('mongodb.tickets.changes', 'topic', { durable: true });
       
       this.logger.log('RabbitMQ Publisher conectado exitosamente');
     } catch (error) {
@@ -45,14 +47,15 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
         throw new Error('RabbitMQ channel no está disponible');
       }
 
-      const routingKey = `mongodb.${collection}.changes`;
+      // Usar un exchange/tópico por cada entidad
+      const exchange = `mongodb.${collection}.changes`;
       const message = JSON.stringify(event);
       
-      this.channel.publish('mongodb_changes', routingKey, Buffer.from(message), {
+      this.channel.publish(exchange, '', Buffer.from(message), {
         persistent: true,
       });
       
-      this.logger.debug(`Evento publicado: ${routingKey} - ${event.documentId}`);
+      this.logger.debug(`Evento publicado a tópico: ${exchange} - ${event.documentId}`);
     } catch (error) {
       this.logger.error(`Error publicando a RabbitMQ:`, error);
       throw error;
