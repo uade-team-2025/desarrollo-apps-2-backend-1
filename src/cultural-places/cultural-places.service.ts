@@ -36,6 +36,8 @@ export class CulturalPlacesService {
       // Transformar coordenadas de {lat, lng} a GeoJSON para almacenamiento (Front end maneja distinto formato)
       const transformedData = {
         ...createCulturalPlaceDto,
+        isActive: true,
+        status: 'ACTIVE',
         color: createCulturalPlaceDto.color || ColorService.generateRandomColor(),
         contact: {
           ...createCulturalPlaceDto.contact,

@@ -41,6 +41,8 @@ describe('EventDataTransformer', () => {
         ...createEventDto,
         culturalPlaceId: expect.any(Object),
         date: new Date(createEventDto.date),
+        isActive: true,
+        status: 'ACTIVE',
         ticketTypes: [
           {
             type: 'general',
@@ -72,6 +74,8 @@ describe('EventDataTransformer', () => {
       const result = service.transformCreateEventData(createEventDto);
 
       expect(result.ticketTypes[0].isActive).toBe(true);
+      expect(result.isActive).toBe(true);
+      expect(result.status).toBe('ACTIVE');
     });
 
     it('should preserve isActive value when provided', () => {
@@ -94,6 +98,7 @@ describe('EventDataTransformer', () => {
       const result = service.transformCreateEventData(createEventDto);
 
       expect(result.ticketTypes[0].isActive).toBe(false);
+      expect(result.status).toBe('ACTIVE');
     });
   });
 

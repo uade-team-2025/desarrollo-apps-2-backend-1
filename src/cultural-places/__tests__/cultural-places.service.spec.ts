@@ -36,6 +36,7 @@ describe('CulturalPlacesService', () => {
     image: 'https://example.com/museo.jpg',
     rating: 4.5,
     isActive: true,
+    status: 'ACTIVE',
     color: '#FF6B6B',
   };
 
@@ -99,7 +100,9 @@ describe('CulturalPlacesService', () => {
             type: 'Point',
             coordinates: [createDto.contact.coordinates.lng, createDto.contact.coordinates.lat]
           }
-        }
+        },
+        isActive: true,
+        status: 'ACTIVE'
       });
       expect(createCall.color).toBeDefined();
       expect(typeof createCall.color).toBe('string');

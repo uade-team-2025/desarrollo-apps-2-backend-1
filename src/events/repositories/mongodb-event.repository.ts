@@ -22,7 +22,13 @@ export class MongoDBEventRepository implements EventRepository {
   }
 
   async create(event: Partial<Event>): Promise<Event> {
-    const createdEvent = new this.eventModel(event);
+    const payload: Partial<Event> = {
+      ...event,
+      isActive: event.isActive !== undefined ? event.isActive : true,
+      status: event.status ?? ((event.isActive === false) ? 'INACTIVE' : 'ACTIVE'),
+    };
+
+    const createdEvent = new this.eventModel(payload);
     const saved = await createdEvent.save();
     return this.toPlainObject(saved);
   }
@@ -117,6 +123,7 @@ export class MongoDBEventRepository implements EventRepository {
     if (!event) return null;
     
     event.isActive = !event.isActive;
+    event.status = event.isActive ? 'ACTIVE' : 'INACTIVE';
     const saved = await event.save();
     return this.toPlainObject(saved);
   }

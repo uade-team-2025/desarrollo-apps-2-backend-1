@@ -135,4 +135,9 @@ export class CreateCulturalPlaceDto {
   @IsOptional()
   @IsString()
   color?: string;
+
+  @ApiProperty({ example: 'ACTIVE', description: 'Estado operativo del espacio', required: false })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

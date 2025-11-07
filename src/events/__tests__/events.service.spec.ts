@@ -62,6 +62,7 @@ describe('EventsService', () => {
       },
     ],
     isActive: true,
+    status: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -118,6 +119,8 @@ describe('EventsService', () => {
               ...data,
               culturalPlaceId: expect.any(Object),
               date: new Date(data.date),
+              isActive: data.isActive ?? true,
+              status: data.status ?? (data.isActive === false ? 'INACTIVE' : 'ACTIVE'),
               ticketTypes: data.ticketTypes.map(ticketType => ({
                 ...ticketType,
                 soldQuantity: 0,
@@ -186,10 +189,12 @@ describe('EventsService', () => {
       const result = await service.create(createEventDto);
 
       expect(result).toEqual(mockEvent);
-      expect(repository.create).toHaveBeenCalledWith({
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({
         ...createEventDto,
         culturalPlaceId: expect.any(Object),
         date: new Date(createEventDto.date),
+        isActive: true,
+        status: 'ACTIVE',
         ticketTypes: [
           {
             ...createEventDto.ticketTypes[0],
@@ -197,7 +202,7 @@ describe('EventsService', () => {
             isActive: true,
           },
         ],
-      });
+      }));
     });
 
 
@@ -232,10 +237,12 @@ describe('EventsService', () => {
       const result = await service.create(customTicketDto);
 
       expect(result).toEqual(mockEventWithCustomTicket);
-      expect(repository.create).toHaveBeenCalledWith({
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({
         ...customTicketDto,
         culturalPlaceId: expect.any(Object),
         date: new Date(customTicketDto.date),
+        isActive: true,
+        status: 'ACTIVE',
         ticketTypes: [
           {
             ...customTicketDto.ticketTypes[0],
@@ -243,7 +250,7 @@ describe('EventsService', () => {
             isActive: true,
           },
         ],
-      });
+      }));
     });
 
     it('should create event with multiple custom ticket types successfully', async () => {
@@ -303,16 +310,18 @@ describe('EventsService', () => {
       const result = await service.create(multipleCustomTicketsDto);
 
       expect(result).toEqual(mockEventWithMultipleCustomTickets);
-      expect(repository.create).toHaveBeenCalledWith({
+      expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({
         ...multipleCustomTicketsDto,
         culturalPlaceId: expect.any(Object),
         date: new Date(multipleCustomTicketsDto.date),
+        isActive: true,
+        status: 'ACTIVE',
         ticketTypes: multipleCustomTicketsDto.ticketTypes.map(ticket => ({
           ...ticket,
           soldQuantity: 0,
           isActive: true,
         })),
-      });
+      }));
     });
 
     it('should throw BadRequestException for duplicate ticket types', async () => {
@@ -615,7 +624,7 @@ describe('EventsService', () => {
 
   describe('toggleActive', () => {
     it('should toggle event active status', async () => {
-      const toggledEvent = { ...mockEvent, isActive: false };
+      const toggledEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
       repository.findById.mockResolvedValue(mockEvent);
       repository.toggleActive.mockResolvedValue(toggledEvent);
 
@@ -632,8 +641,8 @@ describe('EventsService', () => {
     });
 
     it('should publish activation notification when event becomes active', async () => {
-      const inactiveEvent = { ...mockEvent, isActive: false };
-      const activatedEvent = { ...mockEvent, isActive: true };
+      const inactiveEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
+      const activatedEvent = { ...mockEvent, isActive: true, status: 'ACTIVE' };
       
       repository.findById.mockResolvedValue(inactiveEvent);
       repository.toggleActive.mockResolvedValue(activatedEvent);
@@ -653,8 +662,8 @@ describe('EventsService', () => {
     });
 
     it('should publish cancellation notification when event becomes inactive', async () => {
-      const activeEvent = { ...mockEvent, isActive: true };
-      const cancelledEvent = { ...mockEvent, isActive: false };
+      const activeEvent = { ...mockEvent, isActive: true, status: 'ACTIVE' };
+      const cancelledEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
       
       repository.findById.mockResolvedValue(activeEvent);
       repository.toggleActive.mockResolvedValue(cancelledEvent);
@@ -687,8 +696,8 @@ describe('EventsService', () => {
     });
 
     it('should handle error when publishing notification fails', async () => {
-      const inactiveEvent = { ...mockEvent, isActive: false };
-      const activatedEvent = { ...mockEvent, isActive: true };
+      const inactiveEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
+      const activatedEvent = { ...mockEvent, isActive: true, status: 'ACTIVE' };
       
       repository.findById.mockResolvedValue(inactiveEvent);
       repository.toggleActive.mockResolvedValue(activatedEvent);

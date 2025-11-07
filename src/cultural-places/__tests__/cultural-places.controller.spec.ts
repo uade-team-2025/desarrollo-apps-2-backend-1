@@ -34,6 +34,7 @@ describe('CulturalPlacesController', () => {
     image: 'https://example.com/museum.jpg',
     rating: 4.5,
     isActive: true,
+    status: 'ACTIVE',
   };
 
   const mockService = {

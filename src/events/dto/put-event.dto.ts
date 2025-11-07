@@ -44,6 +44,11 @@ export class PutEventDto {
   @IsBoolean()
   isActive: boolean;
 
+  @ApiProperty({ example: 'ACTIVE', description: 'Estado operativo del evento', required: false })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
   @ApiProperty({ type: [TicketTypePutDto], description: 'Ticket types (completely editable)' })
   @IsArray()
   @ArrayMinSize(1)
