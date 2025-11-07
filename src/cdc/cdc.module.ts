@@ -5,6 +5,8 @@ import { RabbitMqPublisherService } from './rabbitmq-publisher.service';
 import { ChangeStreamsListenerService } from './change-streams-listener.service';
 import { CulturalPlaceChangeListenerService, CULTURAL_PLACE_CHANGE_HANDLERS } from './cultural-place-change.listener';
 import { CulturalPlaceClausureHandler } from './handlers/cultural-place-clausure.handler';
+import { CulturalPlaceActivationHandler } from './handlers/cultural-place-activation.handler';
+import { CulturalPlaceChangeHandler } from './interfaces/cultural-place-change-handler.interface';
 
 @Module({
   imports: [ConfigModule, EventsModule],
@@ -13,10 +15,11 @@ import { CulturalPlaceClausureHandler } from './handlers/cultural-place-clausure
     ChangeStreamsListenerService,
     CulturalPlaceChangeListenerService,
     CulturalPlaceClausureHandler,
+    CulturalPlaceActivationHandler,
     {
       provide: CULTURAL_PLACE_CHANGE_HANDLERS,
-      useFactory: (...handlers: CulturalPlaceClausureHandler[]) => handlers,
-      inject: [CulturalPlaceClausureHandler],
+      useFactory: (...handlers: CulturalPlaceChangeHandler[]) => handlers,
+      inject: [CulturalPlaceClausureHandler, CulturalPlaceActivationHandler],
     },
   ],
 })
