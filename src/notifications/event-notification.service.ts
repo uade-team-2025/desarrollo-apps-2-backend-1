@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bull';
-import type { Queue } from 'bull';
 import { EmailService } from '../email/email.service';
 import { TicketsService } from '../tickets/tickets.service';
 
@@ -16,23 +14,9 @@ export class EventNotificationService {
   private readonly logger = new Logger(EventNotificationService.name);
 
   constructor(
-    @InjectQueue('event-notifications') private eventNotificationQueue: Queue,
     private readonly emailService: EmailService,
     private readonly ticketsService: TicketsService,
   ) {}
-
-  async publishEventChange(data: EventChangeData): Promise<void> {
-    try {
-      await this.eventNotificationQueue.add('send-notifications', data, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 1000 },
-      });
-      this.logger.log(`Evento de cambio publicado para el evento ${data.event._id} - Tipo: ${data.changeType}`);
-    } catch (error) {
-      this.logger.error(`Error publicando evento de cambio para el evento ${data.event._id}:`, error);
-      throw error;
-    }
-  }
 
   async processEventChange(data: EventChangeData): Promise<void> {
     const { event, changeType, oldValue, newValue } = data;
@@ -50,13 +34,15 @@ export class EventNotificationService {
     for (const user of usersWithTickets) {
       try {
         if (changeType === 'cancellation') {
+          const cancellationReason = this.resolveCancellationReason(event.status);
+
           await this.emailService.sendEventCancellationEmail({
             userEmail: user.userEmail,
             userName: user.userName,
             event: event,
             ticketCount: user.ticketCount,
             ticketTypes: user.ticketTypes,
-            cancellationReason: 'El evento ha sido cancelado por el organizador.',
+            cancellationReason,
           });
           this.logger.log(`Email de cancelación enviado a ${user.userEmail} para el evento ${event._id}`);
         } else {
@@ -79,5 +65,24 @@ export class EventNotificationService {
     }
 
     this.logger.log(`Proceso de notificación completado para el evento ${event._id}`);
+  }
+
+  private resolveCancellationReason(status?: string): string {
+    if (!status) {
+      return 'El evento ha sido cancelado por el organizador.';
+    }
+
+    const normalizedStatus = status.trim().toUpperCase();
+
+    switch (normalizedStatus) {
+      case 'PAUSED_BY_CLOSURE':
+        return 'El evento fue cancelado porque el espacio cultural fue clausurado.';
+      case 'CANCELLED_BY_CLIMATE':
+        return 'El evento fue cancelado debido a una emergencia climática.';
+      case 'CANCELLED_BY_ORGANIZER':
+        return 'El organizador canceló el evento.';
+      default:
+        return 'El evento ha sido cancelado por el organizador.';
+    }
   }
 }

@@ -6,20 +6,15 @@ import { EVENT_REPOSITORY } from '../interfaces/event.repository.token';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
 import { PutEventDto } from '../dto/put-event.dto';
-import { EventNotificationService } from '../../notifications/event-notification.service';
 
 // Import the new services
 import { EventValidator } from '../validators/event.validator';
 import { TicketValidator } from '../validators/ticket.validator';
 import { EventDataTransformer } from '../transformers/event-data.transformer';
-import { EventChangeDetector } from '../change-detection/event-change-detector.service';
-import { ChangeValueFormatter } from '../change-detection/change-value-formatter.service';
-import { EventChangeNotifier } from '../change-detection/event-change-notifier.service';
 
 describe('EventsService', () => {
   let service: EventsService;
   let repository: jest.Mocked<EventRepository>;
-  let eventNotificationService: jest.Mocked<EventNotificationService>;
   let module: TestingModule;
 
   const mockEvent: any = {
@@ -90,12 +85,6 @@ describe('EventsService', () => {
           provide: EVENT_REPOSITORY,
           useValue: mockRepository,
         },
-        {
-          provide: EventNotificationService,
-          useValue: {
-            publishEventChange: jest.fn(),
-          },
-        },
         // Validators
         {
           provide: EventValidator,
@@ -131,33 +120,11 @@ describe('EventsService', () => {
             transformEventsCoordinates: jest.fn().mockImplementation((events) => events),
           },
         },
-        // Change Detection
-        {
-          provide: EventChangeDetector,
-          useValue: {
-            detectCriticalChange: jest.fn(),
-            detectStatusChange: jest.fn(),
-          },
-        },
-        {
-          provide: ChangeValueFormatter,
-          useValue: {
-            getChangeValues: jest.fn(),
-          },
-        },
-        {
-          provide: EventChangeNotifier,
-          useValue: {
-            notifyEventChange: jest.fn(),
-            notifyStatusChange: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
     service = module.get<EventsService>(EventsService);
     repository = module.get(EVENT_REPOSITORY);
-    eventNotificationService = module.get(EventNotificationService);
   });
 
   afterEach(() => {
@@ -565,59 +532,10 @@ describe('EventsService', () => {
       repository.findById.mockResolvedValueOnce(originalEvent);
       repository.findById.mockResolvedValueOnce(updatedEvent);
       repository.update.mockResolvedValue(updatedEvent);
-      eventNotificationService.publishEventChange.mockRejectedValue(new Error('Notification failed'));
 
       const result = await service.update('507f1f77bcf86cd799439011', putEventDto);
 
       expect(result).toEqual(updatedEvent);
-      // Should not throw error, just log it
-    });
-
-    it('should publish event change notification for critical changes', async () => {
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 30);
-      const futureDateStr = futureDate.toISOString().split('T')[0];
-      
-      const futureDate2 = new Date();
-      futureDate2.setDate(futureDate2.getDate() + 31);
-      const futureDate2Str = futureDate2.toISOString().split('T')[0];
-      
-      const originalEvent = { 
-        ...mockEvent, 
-        date: futureDateStr,
-        time: '19:00' // Keep original time to trigger date_time_change
-      };
-      const updatedEvent = { 
-        ...mockEvent, 
-        date: futureDate2Str,
-        time: '14:00', // Different time to trigger date_time_change
-        name: putEventDto.name,
-        description: putEventDto.description,
-        isActive: putEventDto.isActive,
-        ticketTypes: putEventDto.ticketTypes,
-      };
-      
-      const putEventDtoWithNewDate = { ...putEventDto, date: futureDate2Str };
-      
-      repository.findById.mockResolvedValue(originalEvent);
-      repository.update.mockResolvedValue(updatedEvent);
-      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
-
-      // Mock the change notifier
-      const eventChangeNotifier = module.get(EventChangeNotifier);
-      eventChangeNotifier.notifyEventChange.mockResolvedValue(undefined);
-
-      const result = await service.update('507f1f77bcf86cd799439011', putEventDtoWithNewDate);
-
-      expect(result).toEqual(updatedEvent);
-      expect(eventChangeNotifier.notifyEventChange).toHaveBeenCalledWith(
-        '507f1f77bcf86cd799439011',
-        expect.any(Object),
-        expect.objectContaining({
-          date: expect.any(Date)
-        }),
-        expect.any(Object)
-      );
     });
 
   });
@@ -636,78 +554,9 @@ describe('EventsService', () => {
 
     it('should throw NotFoundException if event not found', async () => {
       repository.findById.mockResolvedValue(null);
-
-      await expect(service.toggleActive('invalid-id')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should publish activation notification when event becomes active', async () => {
-      const inactiveEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
-      const activatedEvent = { ...mockEvent, isActive: true, status: 'ACTIVE' };
-      
-      repository.findById.mockResolvedValue(inactiveEvent);
-      repository.toggleActive.mockResolvedValue(activatedEvent);
-      
-      // Mock the change notifier
-      const eventChangeNotifier = module.get(EventChangeNotifier);
-      eventChangeNotifier.notifyStatusChange.mockResolvedValue(undefined);
-
-      const result = await service.toggleActive('507f1f77bcf86cd799439011');
-
-      expect(result).toEqual(activatedEvent);
-      expect(eventChangeNotifier.notifyStatusChange).toHaveBeenCalledWith(
-        '507f1f77bcf86cd799439011',
-        inactiveEvent,
-        activatedEvent
-      );
-    });
-
-    it('should publish cancellation notification when event becomes inactive', async () => {
-      const activeEvent = { ...mockEvent, isActive: true, status: 'ACTIVE' };
-      const cancelledEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
-      
-      repository.findById.mockResolvedValue(activeEvent);
-      repository.toggleActive.mockResolvedValue(cancelledEvent);
-      
-      // Mock the change notifier
-      const eventChangeNotifier = module.get(EventChangeNotifier);
-      eventChangeNotifier.notifyStatusChange.mockResolvedValue(undefined);
-
-      const result = await service.toggleActive('507f1f77bcf86cd799439011');
-
-      expect(result).toEqual(cancelledEvent);
-      expect(eventChangeNotifier.notifyStatusChange).toHaveBeenCalledWith(
-        '507f1f77bcf86cd799439011',
-        activeEvent,
-        cancelledEvent
-      );
-    });
-
-    it('should not publish notification when status does not change', async () => {
-      const activeEvent = { ...mockEvent, isActive: true };
-      const sameEvent = { ...mockEvent, isActive: true };
-      
-      repository.findById.mockResolvedValue(activeEvent);
-      repository.toggleActive.mockResolvedValue(sameEvent);
-
-      const result = await service.toggleActive('507f1f77bcf86cd799439011');
-
-      expect(result).toEqual(sameEvent);
-      expect(eventNotificationService.publishEventChange).not.toHaveBeenCalled();
-    });
-
-    it('should handle error when publishing notification fails', async () => {
-      const inactiveEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
-      const activatedEvent = { ...mockEvent, isActive: true, status: 'ACTIVE' };
-      
-      repository.findById.mockResolvedValue(inactiveEvent);
-      repository.toggleActive.mockResolvedValue(activatedEvent);
-      eventNotificationService.publishEventChange.mockRejectedValue(new Error('Notification failed'));
-
-      const result = await service.toggleActive('507f1f77bcf86cd799439011');
-
-      expect(result).toEqual(activatedEvent);
-      // Should not throw error, just log it
-    });
+ 
+       await expect(service.toggleActive('invalid-id')).rejects.toThrow(NotFoundException);
+     });
   });
 
   describe('remove', () => {

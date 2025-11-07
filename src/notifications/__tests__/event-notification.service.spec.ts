@@ -2,13 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventNotificationService } from '../event-notification.service';
 import { EmailService } from '../../email/email.service';
 import { TicketsService } from '../../tickets/tickets.service';
-import { getQueueToken } from '@nestjs/bull';
 
 describe('EventNotificationService', () => {
   let service: EventNotificationService;
   let emailService: jest.Mocked<EmailService>;
   let ticketsService: jest.Mocked<TicketsService>;
-  let queue: any;
 
   const mockEvent = {
     _id: '507f1f77bcf86cd799439011',
@@ -53,57 +51,16 @@ describe('EventNotificationService', () => {
             getUsersWithActiveTicketsForEvent: jest.fn(),
           },
         },
-        {
-          provide: getQueueToken('event-notifications'),
-          useValue: {
-            add: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
     service = module.get<EventNotificationService>(EventNotificationService);
     emailService = module.get(EmailService);
     ticketsService = module.get(TicketsService);
-    queue = module.get(getQueueToken('event-notifications'));
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('publishEventChange', () => {
-    it('should publish event change to queue successfully', async () => {
-      const eventChangeData = {
-        event: mockEvent,
-        changeType: 'date_change' as const,
-        oldValue: '30/12/2025',
-        newValue: '31/12/2025',
-      };
-
-      queue.add.mockResolvedValue({ id: 'job-123' });
-
-      await service.publishEventChange(eventChangeData);
-
-      expect(queue.add).toHaveBeenCalledWith('send-notifications', eventChangeData, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 1000 },
-      });
-    });
-
-    it('should handle queue publishing errors', async () => {
-      const eventChangeData = {
-        event: mockEvent,
-        changeType: 'date_change' as const,
-        oldValue: '30/12/2025',
-        newValue: '31/12/2025',
-      };
-
-      const error = new Error('Queue error');
-      queue.add.mockRejectedValue(error);
-
-      await expect(service.publishEventChange(eventChangeData)).rejects.toThrow(error);
-    });
   });
 
   describe('processEventChange', () => {
@@ -210,12 +167,10 @@ describe('EventNotificationService', () => {
       });
     });
 
-    it('should process cancellation notification successfully', async () => {
+    it('should process cancellation notification with custom reason', async () => {
       const eventChangeData = {
-        event: mockEvent,
+        event: { ...mockEvent, status: 'PAUSED_BY_CLOSURE' },
         changeType: 'cancellation' as const,
-        oldValue: 'Activo',
-        newValue: 'Inactivo',
       };
 
       ticketsService.getUsersWithActiveTicketsForEvent.mockResolvedValue(mockUsersWithTickets);
@@ -223,14 +178,48 @@ describe('EventNotificationService', () => {
 
       await service.processEventChange(eventChangeData);
 
-      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith({
-        userEmail: 'user1@example.com',
-        userName: 'User One',
-        event: mockEvent,
-        ticketCount: 2,
-        ticketTypes: ['general', 'vip'],
-        cancellationReason: 'El evento ha sido cancelado por el organizador.',
-      });
+      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: eventChangeData.event,
+          cancellationReason: 'El evento fue cancelado porque el espacio cultural fue clausurado.',
+        }),
+      );
+    });
+
+    it('should use default cancellation reason when status unknown', async () => {
+      const eventChangeData = {
+        event: { ...mockEvent, status: 'OTHERS' },
+        changeType: 'cancellation' as const,
+      };
+
+      ticketsService.getUsersWithActiveTicketsForEvent.mockResolvedValue(mockUsersWithTickets);
+      emailService.sendEventCancellationEmail.mockResolvedValue(true);
+
+      await service.processEventChange(eventChangeData);
+
+      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cancellationReason: 'El evento ha sido cancelado por el organizador.',
+        }),
+      );
+    });
+
+    it('should trim status before resolving reason', async () => {
+      const eventChangeData = {
+        event: { ...mockEvent, status: '  cancelled_by_climate  ' },
+        changeType: 'cancellation' as const,
+      };
+
+      ticketsService.getUsersWithActiveTicketsForEvent.mockResolvedValue(mockUsersWithTickets);
+      emailService.sendEventCancellationEmail.mockResolvedValue(true);
+
+      await service.processEventChange(eventChangeData);
+
+      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cancellationReason: 'El evento fue cancelado debido a una emergencia climática.',
+        }),
+      );
     });
 
     it('should handle case when no users have tickets', async () => {
