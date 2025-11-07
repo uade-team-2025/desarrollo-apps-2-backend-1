@@ -3,15 +3,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { CulturalPlacesModule } from './cultural-places/cultural-places.module';
-import { EventsModule } from './events/events.module';
-import { TicketsModule } from './tickets/tickets.module';
-import { RedisModule } from './redis/redis.module';
-import { MetricsModule } from './metrics/metrics.module';
 import { AuthModule } from './auth/auth.module';
+import { BikeStationsModule } from './bike-stations/bike-stations.module';
 import { CdcModule } from './cdc/cdc.module';
 import { getDatabaseConfig } from './config/database.config';
+import { CulturalPlacesModule } from './cultural-places/cultural-places.module';
+import { EventsModule } from './events/events.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { RedisModule } from './redis/redis.module';
+import { TicketsModule } from './tickets/tickets.module';
+import { TrucksModule } from './trucks/trucks.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -21,7 +23,9 @@ import { getDatabaseConfig } from './config/database.config';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/cultural-places',
+        uri:
+          configService.get<string>('MONGODB_URI') ||
+          'mongodb://localhost:27017/cultural-places',
         ...getDatabaseConfig(),
       }),
       inject: [ConfigService],
@@ -34,6 +38,8 @@ import { getDatabaseConfig } from './config/database.config';
     EventsModule,
     TicketsModule,
     CdcModule,
+    BikeStationsModule,
+    TrucksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
