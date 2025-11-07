@@ -35,6 +35,7 @@ export interface CulturalPlaceInterface {
   image: string;
   rating: number;
   isActive: boolean;
+  status: string;
   color: string;
 }
 
@@ -48,6 +49,7 @@ export interface CreateCulturalPlaceDto {
   image: string;
   rating?: number;
   isActive?: boolean;
+  status?: string;
 }
 
 export interface UpdateCulturalPlaceDto {
@@ -60,6 +62,7 @@ export interface UpdateCulturalPlaceDto {
   image?: string;
   rating?: number;
   isActive?: boolean;
+  status?: string;
   color?: string;
 }
 

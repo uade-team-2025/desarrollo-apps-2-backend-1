@@ -84,6 +84,9 @@ export class CulturalPlace {
   @Prop({ default: true })
   isActive: boolean;
 
+  @Prop({ default: 'ACTIVE', trim: true })
+  status: string;
+
   @Prop({ required: true })
   color: string;
 }
