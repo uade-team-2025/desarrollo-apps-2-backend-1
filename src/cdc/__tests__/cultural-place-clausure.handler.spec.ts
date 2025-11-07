@@ -30,7 +30,8 @@ describe('CulturalPlaceClausureHandler', () => {
           collection: 'culturalplaces',
           eventType: 'UPDATE',
           documentId: 'id',
-          data: { status: 'CLAUSURADO' },
+          data: { status: 'ACTIVE' },
+          updatedFields: { status: 'CLAUSURADO' },
         }),
       ).toBe(true);
     });
@@ -41,7 +42,7 @@ describe('CulturalPlaceClausureHandler', () => {
           collection: 'events',
           eventType: 'UPDATE',
           documentId: 'id',
-          data: { status: 'CLAUSURADO' },
+          updatedFields: { status: 'CLAUSURADO' },
         }),
       ).toBe(false);
     });
@@ -52,7 +53,7 @@ describe('CulturalPlaceClausureHandler', () => {
           collection: 'culturalplaces',
           eventType: 'UPDATE',
           documentId: 'id',
-          data: { status: 'ACTIVE' },
+          updatedFields: { status: 'ACTIVE' },
         }),
       ).toBe(false);
     });
@@ -66,7 +67,8 @@ describe('CulturalPlaceClausureHandler', () => {
         collection: 'culturalplaces',
         eventType: 'UPDATE',
         documentId: '507f1f77bcf86cd799439011',
-        data: { _id: '507f1f77bcf86cd799439011', status: 'CLAUSURADO' },
+        data: { _id: '507f1f77bcf86cd799439011', status: 'ACTIVE' },
+        updatedFields: { status: 'CLAUSURADO' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).toHaveBeenCalledWith(
@@ -89,7 +91,7 @@ describe('CulturalPlaceClausureHandler', () => {
         collection: 'culturalplaces',
         eventType: 'UPDATE',
         documentId: '',
-        data: { status: 'CLAUSURADO' },
+        updatedFields: { status: 'CLAUSURADO' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).not.toHaveBeenCalled();

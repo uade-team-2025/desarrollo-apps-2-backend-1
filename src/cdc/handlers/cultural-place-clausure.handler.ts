@@ -18,8 +18,12 @@ export class CulturalPlaceClausureHandler implements CulturalPlaceChangeHandler 
       return false;
     }
 
-    const status = message.data?.status;
-    return typeof status === 'string' && status.toUpperCase() === 'CLAUSURADO';
+    const status = (message.updatedFields?.status ?? message.data?.status) as string | undefined;
+    if (!status) {
+      return false;
+    }
+
+    return status.toUpperCase() === 'CLAUSURADO';
   }
 
   async handle(message: CulturalPlaceChangeMessage): Promise<void> {
@@ -29,6 +33,8 @@ export class CulturalPlaceClausureHandler implements CulturalPlaceChangeHandler 
       this.logger.warn('Mensaje de clausura sin ID de lugar cultural. Se omite.');
       return;
     }
+
+    const status = (message.updatedFields?.status ?? message.data?.status) as string | undefined;
 
     this.logger.log(`Lugar cultural ${culturalPlaceId} clausurado. Pausando eventos asociados.`);
 

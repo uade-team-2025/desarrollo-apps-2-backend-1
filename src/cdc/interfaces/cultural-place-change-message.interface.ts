@@ -3,5 +3,6 @@ export interface CulturalPlaceChangeMessage {
   eventType: string;
   documentId: string;
   data?: Record<string, any>;
+  updatedFields?: Record<string, any>;
 }
 
