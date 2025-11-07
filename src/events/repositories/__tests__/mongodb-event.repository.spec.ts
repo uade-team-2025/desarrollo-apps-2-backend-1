@@ -128,16 +128,16 @@ describe('MongoDBEventRepository', () => {
       const culturalPlaceId = '507f1f77bcf86cd799439099';
 
       const result = await repository.updateManyByCulturalPlace(culturalPlaceId, {
-        status: 'PAUSADO_POR_CLAUSURA',
+        status: 'PAUSED_BY_CLOSURE',
         isActive: false,
-      }, { status: { $ne: 'PAUSADO_POR_CLAUSURA' } });
+      }, { status: { $ne: 'PAUSED_BY_CLOSURE' } });
 
       expect(model.updateMany).toHaveBeenCalledWith(
         {
           culturalPlaceId: new Types.ObjectId(culturalPlaceId),
-          status: { $ne: 'PAUSADO_POR_CLAUSURA' },
+          status: { $ne: 'PAUSED_BY_CLOSURE' },
         },
-        { $set: { status: 'PAUSADO_POR_CLAUSURA', isActive: false } }
+        { $set: { status: 'PAUSED_BY_CLOSURE', isActive: false } }
       );
       expect(result).toBe(3);
     });

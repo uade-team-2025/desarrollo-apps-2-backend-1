@@ -24,14 +24,14 @@ describe('CulturalPlaceClausureHandler', () => {
   });
 
   describe('canHandle', () => {
-    it('returns true when status is CLAUSURADO', () => {
+    it('returns true when status is CLOSED_DOWN', () => {
       expect(
         handler.canHandle({
           collection: 'culturalplaces',
           eventType: 'UPDATE',
           documentId: 'id',
           data: { status: 'ACTIVE' },
-          updatedFields: { status: 'CLAUSURADO' },
+          updatedFields: { status: 'CLOSED_DOWN' },
         }),
       ).toBe(true);
     });
@@ -42,7 +42,7 @@ describe('CulturalPlaceClausureHandler', () => {
           collection: 'events',
           eventType: 'UPDATE',
           documentId: 'id',
-          updatedFields: { status: 'CLAUSURADO' },
+          updatedFields: { status: 'CLOSED_DOWN' },
         }),
       ).toBe(false);
     });
@@ -68,18 +68,18 @@ describe('CulturalPlaceClausureHandler', () => {
         eventType: 'UPDATE',
         documentId: '507f1f77bcf86cd799439011',
         data: { _id: '507f1f77bcf86cd799439011', status: 'ACTIVE' },
-        updatedFields: { status: 'CLAUSURADO' },
+        updatedFields: { status: 'CLOSED_DOWN' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         {
-          status: 'PAUSADO_POR_CLAUSURA',
+          status: 'PAUSED_BY_CLOSURE',
           isActive: false,
         },
         {
           $or: [
-            { status: { $ne: 'PAUSADO_POR_CLAUSURA' } },
+            { status: { $ne: 'PAUSED_BY_CLOSURE' } },
             { isActive: { $ne: false } },
           ],
         },
@@ -91,7 +91,7 @@ describe('CulturalPlaceClausureHandler', () => {
         collection: 'culturalplaces',
         eventType: 'UPDATE',
         documentId: '',
-        updatedFields: { status: 'CLAUSURADO' },
+        updatedFields: { status: 'CLOSED_DOWN' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).not.toHaveBeenCalled();

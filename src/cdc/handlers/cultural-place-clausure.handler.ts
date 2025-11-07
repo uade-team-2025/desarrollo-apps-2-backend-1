@@ -23,36 +23,36 @@ export class CulturalPlaceClausureHandler implements CulturalPlaceChangeHandler 
       return false;
     }
 
-    return status.toUpperCase() === 'CLAUSURADO';
+    return status.toUpperCase() === 'CLOSED_DOWN';
   }
 
   async handle(message: CulturalPlaceChangeMessage): Promise<void> {
     const culturalPlaceId = message.data?._id || message.documentId;
 
     if (!culturalPlaceId) {
-      this.logger.warn('Mensaje de clausura sin ID de lugar cultural. Se omite.');
+      this.logger.warn('Closed-down message without cultural place ID. Skipping.');
       return;
     }
 
     const status = (message.updatedFields?.status ?? message.data?.status) as string | undefined;
 
-    this.logger.log(`Lugar cultural ${culturalPlaceId} clausurado. Pausando eventos asociados.`);
+    this.logger.log(`Cultural place ${culturalPlaceId} closed down. Pausing related events.`);
 
     const modifiedCount = await this.eventRepository.updateManyByCulturalPlace(
       culturalPlaceId,
       {
-        status: 'PAUSADO_POR_CLAUSURA',
+        status: 'PAUSED_BY_CLOSURE',
         isActive: false,
       },
       {
         $or: [
-          { status: { $ne: 'PAUSADO_POR_CLAUSURA' } },
+          { status: { $ne: 'PAUSED_BY_CLOSURE' } },
           { isActive: { $ne: false } },
         ],
       },
     );
 
-    this.logger.log(`Eventos pausados por clausura para lugar ${culturalPlaceId}: ${modifiedCount}`);
+    this.logger.log(`Events paused by closure for cultural place ${culturalPlaceId}: ${modifiedCount}`);
   }
 }
 

@@ -24,13 +24,13 @@ describe('CulturalPlaceActivationHandler', () => {
   });
 
   describe('canHandle', () => {
-    it('returns true when status is ACTIVO', () => {
+    it('returns true when status is ACTIVE', () => {
       expect(
         handler.canHandle({
           collection: 'culturalplaces',
           eventType: 'UPDATE',
           documentId: 'id',
-          updatedFields: { status: 'ACTIVO' },
+          updatedFields: { status: 'ACTIVE' },
         }),
       ).toBe(true);
     });
@@ -41,7 +41,7 @@ describe('CulturalPlaceActivationHandler', () => {
           collection: 'events',
           eventType: 'UPDATE',
           documentId: 'id',
-          updatedFields: { status: 'ACTIVO' },
+          updatedFields: { status: 'ACTIVE' },
         }),
       ).toBe(false);
     });
@@ -66,8 +66,8 @@ describe('CulturalPlaceActivationHandler', () => {
         collection: 'culturalplaces',
         eventType: 'UPDATE',
         documentId: '507f1f77bcf86cd799439011',
-        data: { _id: '507f1f77bcf86cd799439011', status: 'PAUSADO_POR_CLAUSURA' },
-        updatedFields: { status: 'ACTIVO' },
+        data: { _id: '507f1f77bcf86cd799439011', status: 'PAUSED_BY_CLOSURE' },
+        updatedFields: { status: 'ACTIVE' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).toHaveBeenCalledWith(
@@ -90,7 +90,7 @@ describe('CulturalPlaceActivationHandler', () => {
         collection: 'culturalplaces',
         eventType: 'UPDATE',
         documentId: '',
-        updatedFields: { status: 'ACTIVO' },
+        updatedFields: { status: 'ACTIVE' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).not.toHaveBeenCalled();

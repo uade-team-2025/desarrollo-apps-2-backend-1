@@ -23,7 +23,7 @@ export class CulturalPlaceActivationHandler implements CulturalPlaceChangeHandle
       return false;
     }
 
-    return status.toUpperCase() === 'ACTIVO';
+    return status.toUpperCase() === 'ACTIVE';
   }
 
   async handle(message: CulturalPlaceChangeMessage): Promise<void> {
@@ -34,7 +34,7 @@ export class CulturalPlaceActivationHandler implements CulturalPlaceChangeHandle
       return;
     }
 
-    this.logger.log(`Lugar cultural ${culturalPlaceId} activo nuevamente. Reactivando eventos asociados.`);
+    this.logger.log(`Cultural place ${culturalPlaceId} restored to ACTIVE. Reactivating events.`);
 
     const modifiedCount = await this.eventRepository.updateManyByCulturalPlace(
       culturalPlaceId,
@@ -50,7 +50,7 @@ export class CulturalPlaceActivationHandler implements CulturalPlaceChangeHandle
       },
     );
 
-    this.logger.log(`Eventos reactivados para lugar ${culturalPlaceId}: ${modifiedCount}`);
+    this.logger.log(`Events reactivated for cultural place ${culturalPlaceId}: ${modifiedCount}`);
   }
 }
 
