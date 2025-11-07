@@ -84,7 +84,9 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
         persistent: true,
       });
       
-      this.logger.debug(`Evento publicado a tópico: ${exchange} (${routingKey}) - ${event.documentId}`);
+      this.logger.debug(
+        `Evento publicado a tópico: ${exchange} (${routingKey}) - ${event.documentId} - mensaje: ${message}`,
+      );
     } catch (error) {
       this.logger.error(`Error publicando a RabbitMQ:`, error);
       throw error;
