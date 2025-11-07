@@ -83,6 +83,15 @@ export class EventsService {
       ticketTypes: putEventDto.ticketTypes
     };
 
+    const normalizedStatus = putEventDto.status?.trim();
+    if (normalizedStatus !== undefined) {
+      updateData.status = normalizedStatus;
+    } else if (originalEvent.status) {
+      updateData.status = originalEvent.status;
+    } else {
+      updateData.status = putEventDto.isActive ? 'ACTIVE' : 'INACTIVE';
+    }
+
     const updatedEvent = await this.repository.update(id, updateData);
 
     if (!updatedEvent) {

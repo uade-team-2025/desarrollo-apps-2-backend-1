@@ -49,6 +49,7 @@ describe('EventsController', () => {
       },
     ],
     isActive: true,
+    status: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -208,7 +209,7 @@ describe('EventsController', () => {
 
   describe('toggleActive', () => {
     it('should toggle active status', async () => {
-      const inactiveEvent = { ...mockEvent, isActive: false };
+      const inactiveEvent = { ...mockEvent, isActive: false, status: 'INACTIVE' };
       mockService.toggleActive.mockResolvedValue(inactiveEvent);
 
       const result = await controller.toggleActive('507f1f77bcf86cd799439011');

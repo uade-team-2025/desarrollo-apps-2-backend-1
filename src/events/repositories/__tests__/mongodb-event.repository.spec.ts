@@ -110,7 +110,11 @@ describe('MongoDBEventRepository', () => {
 
       const result = await repository.create(createEventDto);
 
-      expect(model).toHaveBeenCalledWith(createEventDto);
+      expect(model).toHaveBeenCalledWith(expect.objectContaining({
+        ...createEventDto,
+        isActive: true,
+        status: 'ACTIVE',
+      }));
       expect(result).toEqual(mockEvent);
     });
   });

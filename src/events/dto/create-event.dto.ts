@@ -64,4 +64,9 @@ export class CreateEventDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiProperty({ example: 'ACTIVE', description: 'Estado operativo del evento', required: false })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

@@ -8,10 +8,16 @@ export class EventDataTransformer {
    * Transforma los datos del DTO para la creación de un evento
    */
   transformCreateEventData(createEventDto: CreateEventDto): any {
+    const normalizedStatus = createEventDto.status?.trim() || 'ACTIVE';
+    const isActive =
+      createEventDto.isActive !== undefined ? createEventDto.isActive : normalizedStatus.toUpperCase() === 'ACTIVE';
+
     return {
       ...createEventDto,
       culturalPlaceId: new Types.ObjectId(createEventDto.culturalPlaceId),
       date: new Date(createEventDto.date),
+      status: normalizedStatus,
+      isActive,
       ticketTypes: createEventDto.ticketTypes.map(ticketType => ({
         ...ticketType,
         soldQuantity: 0,

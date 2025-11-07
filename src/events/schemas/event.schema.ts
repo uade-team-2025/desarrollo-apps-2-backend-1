@@ -67,6 +67,9 @@ export class Event {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ default: 'ACTIVE', trim: true })
+  status: string;
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event);
@@ -77,6 +80,7 @@ EventSchema.index({ date: 1 });
 EventSchema.index({ culturalPlaceId: 1, date: 1 });
 EventSchema.index({ isActive: 1 });
 EventSchema.index({ date: 1, isActive: 1 });
+EventSchema.index({ status: 1 });
 
 // Virtual for available quantity
 EventSchema.virtual('availableQuantity').get(function() {
