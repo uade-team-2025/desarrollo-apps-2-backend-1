@@ -43,6 +43,7 @@ describe('MongoDBEventRepository', () => {
       },
     ],
     isActive: true,
+    status: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -73,6 +74,9 @@ describe('MongoDBEventRepository', () => {
       exec: jest.fn().mockResolvedValue(mockEvent),
     });
     (MockModel as any).updateOne = jest.fn().mockResolvedValue({ modifiedCount: 1 });
+    (MockModel as any).updateMany = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({ modifiedCount: 3 }),
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -116,6 +120,26 @@ describe('MongoDBEventRepository', () => {
         status: 'ACTIVE',
       }));
       expect(result).toEqual(mockEvent);
+    });
+  });
+
+  describe('updateManyByCulturalPlace', () => {
+    it('should update events for a cultural place', async () => {
+      const culturalPlaceId = '507f1f77bcf86cd799439099';
+
+      const result = await repository.updateManyByCulturalPlace(culturalPlaceId, {
+        status: 'PAUSADO_POR_CLAUSURA',
+        isActive: false,
+      }, { status: { $ne: 'PAUSADO_POR_CLAUSURA' } });
+
+      expect(model.updateMany).toHaveBeenCalledWith(
+        {
+          culturalPlaceId: new Types.ObjectId(culturalPlaceId),
+          status: { $ne: 'PAUSADO_POR_CLAUSURA' },
+        },
+        { $set: { status: 'PAUSADO_POR_CLAUSURA', isActive: false } }
+      );
+      expect(result).toBe(3);
     });
   });
 

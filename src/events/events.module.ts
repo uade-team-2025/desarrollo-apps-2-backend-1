@@ -45,6 +45,6 @@ import { EventChangeNotifier } from './change-detection/event-change-notifier.se
     ChangeValueFormatter,
     EventChangeNotifier,
   ],
-  exports: [EventsService, EventInventoryService],
+  exports: [EventsService, EventInventoryService, EVENT_REPOSITORY],
 })
 export class EventsModule {}
