@@ -1,12 +1,14 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
+import { MobilityStationsMessage } from './interfaces/mobility-stations-message.interface';
 
 @Injectable()
 export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMqPublisherService.name);
   private connection: any = null;
   private channel: any = null;
+  private readonly mobilityQueueName = 'movilidad.estaciones.festivalverde';
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -30,6 +32,7 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       await this.channel.assertQueue('cultura.espacio.modificar', { durable: true });
       await this.channel.assertQueue('cultura.ticket.crear', { durable: true });
       await this.channel.assertQueue('cultura.ticket.modificar', { durable: true });
+      await this.channel.assertQueue(this.mobilityQueueName, { durable: true });
 
       // Vincular colas a exchanges según routing key
       await this.channel.bindQueue('cultura.evento.crear', 'cultura.evento', 'crear');
@@ -89,6 +92,32 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       );
     } catch (error) {
       this.logger.error(`Error publicando a RabbitMQ:`, error);
+      throw error;
+    }
+  }
+
+  async sendMobilityStationsMessage(message: MobilityStationsMessage): Promise<void> {
+    try {
+      if (!this.channel) {
+        throw new Error('RabbitMQ channel no está disponible');
+      }
+
+      const payload = JSON.stringify(message);
+      const wasQueued = this.channel.sendToQueue(this.mobilityQueueName, Buffer.from(payload), {
+        persistent: true,
+      });
+
+      if (!wasQueued) {
+        this.logger.warn(
+          `El buffer del canal está lleno al publicar en ${this.mobilityQueueName}. El mensaje se enviará cuando sea posible.`,
+        );
+      }
+
+      this.logger.debug(
+        `Mensaje de movilidad enviado a ${this.mobilityQueueName} - contenido: ${payload}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error enviando mensaje a la cola de movilidad:`, error);
       throw error;
     }
   }

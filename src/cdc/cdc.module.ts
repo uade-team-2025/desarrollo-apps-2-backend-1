@@ -11,9 +11,13 @@ import { CulturalPlaceChangeHandler } from './interfaces/cultural-place-change-h
 import { EventChangeListenerService, EVENT_CHANGE_HANDLERS } from './event-change.listener';
 import { EventChangeHandler } from './interfaces/event-change-handler.interface';
 import { EventEmailNotificationHandler } from './handlers/event-email-notification.handler';
+import { MobilityStationsController } from './mobility-stations.controller';
+import { MobilityStationsService } from './mobility-stations.service';
+import { MobilityStationsListenerService } from './mobility-stations.listener';
 
 @Module({
   imports: [ConfigModule, EventsModule, NotificationsModule],
+  controllers: [MobilityStationsController],
   providers: [
     RabbitMqPublisherService,
     ChangeStreamsListenerService,
@@ -22,6 +26,8 @@ import { EventEmailNotificationHandler } from './handlers/event-email-notificati
     CulturalPlaceActivationHandler,
     EventChangeListenerService,
     EventEmailNotificationHandler,
+    MobilityStationsService,
+    MobilityStationsListenerService,
     {
       provide: CULTURAL_PLACE_CHANGE_HANDLERS,
       useFactory: (...handlers: CulturalPlaceChangeHandler[]) => handlers,
@@ -33,7 +39,12 @@ import { EventEmailNotificationHandler } from './handlers/event-email-notificati
       inject: [EventEmailNotificationHandler],
     },
   ],
-  exports: [RabbitMqPublisherService, ChangeStreamsListenerService, EventChangeListenerService],
+  exports: [
+    RabbitMqPublisherService,
+    ChangeStreamsListenerService,
+    EventChangeListenerService,
+    MobilityStationsService,
+  ],
 })
 export class CdcModule {}
 
