@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventsModule } from '../events/events.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { RabbitMqPublisherService } from './rabbitmq-publisher.service';
 import { ChangeStreamsListenerService } from './change-streams-listener.service';
 import { CulturalPlaceChangeListenerService, CULTURAL_PLACE_CHANGE_HANDLERS } from './cultural-place-change.listener';
@@ -12,7 +13,7 @@ import { EventChangeHandler } from './interfaces/event-change-handler.interface'
 import { EventEmailNotificationHandler } from './handlers/event-email-notification.handler';
 
 @Module({
-  imports: [ConfigModule, EventsModule],
+  imports: [ConfigModule, EventsModule, NotificationsModule],
   providers: [
     RabbitMqPublisherService,
     ChangeStreamsListenerService,
