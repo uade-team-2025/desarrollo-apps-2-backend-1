@@ -147,4 +147,19 @@ export class MongoDBEventRepository implements EventRepository {
       return false;
     }
   }
+
+  async updateManyByCulturalPlace(
+    culturalPlaceId: string,
+    update: Partial<Event>,
+    additionalFilter: Record<string, any> = {},
+  ): Promise<number> {
+    const filter = {
+      culturalPlaceId: new Types.ObjectId(culturalPlaceId),
+      ...additionalFilter,
+    };
+
+    const result = await this.eventModel.updateMany(filter, { $set: update }).exec();
+
+    return result.modifiedCount ?? 0;
+  }
 }

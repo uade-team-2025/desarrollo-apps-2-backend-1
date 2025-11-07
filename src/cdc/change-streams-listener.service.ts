@@ -86,14 +86,18 @@ export class ChangeStreamsListenerService implements OnModuleInit, OnModuleDestr
       }
 
       const populatedDocument = await this.getPopulatedDocument(collectionName, documentId);
-      
-      const event = {
+
+      const event: Record<string, any> = {
         eventType: this.mapOperationType(change.operationType),
         collection: collectionName,
         documentId,
         timestamp: new Date().toISOString(),
         data: populatedDocument || change.fullDocument,
       };
+
+      if (change.operationType === 'update') {
+        event.updatedFields = change.updateDescription?.updatedFields ?? {};
+      }
 
       await this.rabbitMqPublisher.publish(collectionName, event);
     } catch (error) {

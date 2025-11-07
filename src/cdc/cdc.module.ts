@@ -1,11 +1,27 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventsModule } from '../events/events.module';
 import { RabbitMqPublisherService } from './rabbitmq-publisher.service';
 import { ChangeStreamsListenerService } from './change-streams-listener.service';
+import { CulturalPlaceChangeListenerService, CULTURAL_PLACE_CHANGE_HANDLERS } from './cultural-place-change.listener';
+import { CulturalPlaceClausureHandler } from './handlers/cultural-place-clausure.handler';
+import { CulturalPlaceActivationHandler } from './handlers/cultural-place-activation.handler';
+import { CulturalPlaceChangeHandler } from './interfaces/cultural-place-change-handler.interface';
 
 @Module({
-  imports: [ConfigModule],
-  providers: [RabbitMqPublisherService, ChangeStreamsListenerService],
+  imports: [ConfigModule, EventsModule],
+  providers: [
+    RabbitMqPublisherService,
+    ChangeStreamsListenerService,
+    CulturalPlaceChangeListenerService,
+    CulturalPlaceClausureHandler,
+    CulturalPlaceActivationHandler,
+    {
+      provide: CULTURAL_PLACE_CHANGE_HANDLERS,
+      useFactory: (...handlers: CulturalPlaceChangeHandler[]) => handlers,
+      inject: [CulturalPlaceClausureHandler, CulturalPlaceActivationHandler],
+    },
+  ],
 })
 export class CdcModule {}
 
