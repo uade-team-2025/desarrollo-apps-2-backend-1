@@ -18,22 +18,28 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
       
-      // Declarar un exchange por cada entidad
-      await this.channel.assertExchange('mongodb.events.changes', 'topic', { durable: true });
-      await this.channel.assertExchange('mongodb.culturalplaces.changes', 'topic', { durable: true });
-      await this.channel.assertExchange('mongodb.tickets.changes', 'topic', { durable: true });
-      
-      // Crear colas para cada exchange
-      await this.channel.assertQueue('mongodb.events.queue', { durable: true });
-      await this.channel.assertQueue('mongodb.culturalplaces.queue', { durable: true });
-      await this.channel.assertQueue('mongodb.tickets.queue', { durable: true });
-      
-      // Vincular colas a exchanges
-      await this.channel.bindQueue('mongodb.events.queue', 'mongodb.events.changes', '');
-      await this.channel.bindQueue('mongodb.culturalplaces.queue', 'mongodb.culturalplaces.changes', '');
-      await this.channel.bindQueue('mongodb.tickets.queue', 'mongodb.tickets.changes', '');
-      
-      this.logger.log('RabbitMQ Publisher conectado exitosamente - Exchanges y colas creados');
+      // Declarar exchanges por dominio
+      await this.channel.assertExchange('cultura.evento', 'topic', { durable: true });
+      await this.channel.assertExchange('cultura.espacio', 'topic', { durable: true });
+      await this.channel.assertExchange('cultura.ticket', 'topic', { durable: true });
+
+      // Crear colas por tipo de cambio identificado (crear/modificar)
+      await this.channel.assertQueue('cultura.evento.crear', { durable: true });
+      await this.channel.assertQueue('cultura.evento.modificar', { durable: true });
+      await this.channel.assertQueue('cultura.espacio.crear', { durable: true });
+      await this.channel.assertQueue('cultura.espacio.modificar', { durable: true });
+      await this.channel.assertQueue('cultura.ticket.crear', { durable: true });
+      await this.channel.assertQueue('cultura.ticket.modificar', { durable: true });
+
+      // Vincular colas a exchanges según routing key
+      await this.channel.bindQueue('cultura.evento.crear', 'cultura.evento', 'crear');
+      await this.channel.bindQueue('cultura.evento.modificar', 'cultura.evento', 'modificar');
+      await this.channel.bindQueue('cultura.espacio.crear', 'cultura.espacio', 'crear');
+      await this.channel.bindQueue('cultura.espacio.modificar', 'cultura.espacio', 'modificar');
+      await this.channel.bindQueue('cultura.ticket.crear', 'cultura.ticket', 'crear');
+      await this.channel.bindQueue('cultura.ticket.modificar', 'cultura.ticket', 'modificar');
+
+      this.logger.log('RabbitMQ Publisher conectado exitosamente - Exchanges y colas (crear/modificar) registrados');
     } catch (error) {
       this.logger.error('Error conectando a RabbitMQ - CDC no estará disponible:', error.message);
       // No lanzar error para que la app siga funcionando aunque RabbitMQ no esté disponible
@@ -57,15 +63,28 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
         throw new Error('RabbitMQ channel no está disponible');
       }
 
-      // Usar un exchange/tópico por cada entidad
-      const exchange = `mongodb.${collection}.changes`;
+      const exchangeMap: Record<string, string> = {
+        events: 'cultura.evento',
+        culturalplaces: 'cultura.espacio',
+        tickets: 'cultura.ticket',
+      };
+
+      const routingKeyMap: Record<string, string> = {
+        INSERT: 'crear',
+        UPDATE: 'modificar',
+        REPLACE: 'modificar',
+        DELETE: 'modificar',
+      };
+
+      const exchange = exchangeMap[collection] ?? `cultura.${collection}`;
+      const routingKey = routingKeyMap[event.eventType] ?? 'modificar';
       const message = JSON.stringify(event);
-      
-      this.channel.publish(exchange, '', Buffer.from(message), {
+
+      this.channel.publish(exchange, routingKey, Buffer.from(message), {
         persistent: true,
       });
       
-      this.logger.debug(`Evento publicado a tópico: ${exchange} - ${event.documentId}`);
+      this.logger.debug(`Evento publicado a tópico: ${exchange} (${routingKey}) - ${event.documentId}`);
     } catch (error) {
       this.logger.error(`Error publicando a RabbitMQ:`, error);
       throw error;
