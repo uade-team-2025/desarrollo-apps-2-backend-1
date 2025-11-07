@@ -34,13 +34,15 @@ export class EventNotificationService {
     for (const user of usersWithTickets) {
       try {
         if (changeType === 'cancellation') {
+          const cancellationReason = this.resolveCancellationReason(event.status);
+
           await this.emailService.sendEventCancellationEmail({
             userEmail: user.userEmail,
             userName: user.userName,
             event: event,
             ticketCount: user.ticketCount,
             ticketTypes: user.ticketTypes,
-            cancellationReason: 'El evento ha sido cancelado por el organizador.',
+            cancellationReason,
           });
           this.logger.log(`Email de cancelación enviado a ${user.userEmail} para el evento ${event._id}`);
         } else {
@@ -63,5 +65,24 @@ export class EventNotificationService {
     }
 
     this.logger.log(`Proceso de notificación completado para el evento ${event._id}`);
+  }
+
+  private resolveCancellationReason(status?: string): string {
+    if (!status) {
+      return 'El evento ha sido cancelado por el organizador.';
+    }
+
+    const normalizedStatus = status.trim().toUpperCase();
+
+    switch (normalizedStatus) {
+      case 'PAUSED_BY_CLOSURE':
+        return 'El evento fue cancelado porque el espacio cultural fue clausurado.';
+      case 'CANCELLED_BY_CLIMATE':
+        return 'El evento fue cancelado debido a una emergencia climática.';
+      case 'CANCELLED_BY_ORGANIZER':
+        return 'El organizador canceló el evento.';
+      default:
+        return 'El evento ha sido cancelado por el organizador.';
+    }
   }
 }

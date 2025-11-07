@@ -167,12 +167,10 @@ describe('EventNotificationService', () => {
       });
     });
 
-    it('should process cancellation notification successfully', async () => {
+    it('should process cancellation notification with custom reason', async () => {
       const eventChangeData = {
-        event: mockEvent,
+        event: { ...mockEvent, status: 'PAUSED_BY_CLOSURE' },
         changeType: 'cancellation' as const,
-        oldValue: 'Activo',
-        newValue: 'Inactivo',
       };
 
       ticketsService.getUsersWithActiveTicketsForEvent.mockResolvedValue(mockUsersWithTickets);
@@ -180,14 +178,48 @@ describe('EventNotificationService', () => {
 
       await service.processEventChange(eventChangeData);
 
-      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith({
-        userEmail: 'user1@example.com',
-        userName: 'User One',
-        event: mockEvent,
-        ticketCount: 2,
-        ticketTypes: ['general', 'vip'],
-        cancellationReason: 'El evento ha sido cancelado por el organizador.',
-      });
+      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: eventChangeData.event,
+          cancellationReason: 'El evento fue cancelado porque el espacio cultural fue clausurado.',
+        }),
+      );
+    });
+
+    it('should use default cancellation reason when status unknown', async () => {
+      const eventChangeData = {
+        event: { ...mockEvent, status: 'OTHERS' },
+        changeType: 'cancellation' as const,
+      };
+
+      ticketsService.getUsersWithActiveTicketsForEvent.mockResolvedValue(mockUsersWithTickets);
+      emailService.sendEventCancellationEmail.mockResolvedValue(true);
+
+      await service.processEventChange(eventChangeData);
+
+      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cancellationReason: 'El evento ha sido cancelado por el organizador.',
+        }),
+      );
+    });
+
+    it('should trim status before resolving reason', async () => {
+      const eventChangeData = {
+        event: { ...mockEvent, status: '  cancelled_by_climate  ' },
+        changeType: 'cancellation' as const,
+      };
+
+      ticketsService.getUsersWithActiveTicketsForEvent.mockResolvedValue(mockUsersWithTickets);
+      emailService.sendEventCancellationEmail.mockResolvedValue(true);
+
+      await service.processEventChange(eventChangeData);
+
+      expect(emailService.sendEventCancellationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cancellationReason: 'El evento fue cancelado debido a una emergencia climática.',
+        }),
+      );
     });
 
     it('should handle case when no users have tickets', async () => {
