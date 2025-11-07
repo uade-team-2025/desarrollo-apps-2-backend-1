@@ -7,29 +7,32 @@ export class ChangeValueFormatter {
    * Formatea los valores de cambio para notificaciones
    */
   async getChangeValues(originalEvent: any, updatedEvent: any, changeType: ChangeType): Promise<{ oldValue: any; newValue: any }> {
+    const baseOriginal = originalEvent ?? {};
+    const baseUpdated = updatedEvent ?? {};
+
     switch (changeType) {
       case 'date_change':
-        return this.formatDateChange(originalEvent, updatedEvent);
+        return this.formatDateChange(baseOriginal, baseUpdated);
       
       case 'date_time_change':
-        return this.formatDateTimeChange(originalEvent, updatedEvent);
+        return this.formatDateTimeChange(baseOriginal, baseUpdated);
       
       case 'time_change':
         return {
-          oldValue: originalEvent.time || 'N/A',
-          newValue: updatedEvent.time || 'N/A',
+          oldValue: baseOriginal.time ?? 'N/A',
+          newValue: baseUpdated.time ?? 'N/A',
         };
       
       case 'activation':
         return {
-          oldValue: originalEvent.isActive ? 'Activo' : 'Inactivo',
-          newValue: updatedEvent.isActive ? 'Activo' : 'Inactivo',
+          oldValue: typeof baseOriginal.isActive === 'boolean' ? (baseOriginal.isActive ? 'Activo' : 'Inactivo') : 'Desconocido',
+          newValue: typeof baseUpdated.isActive === 'boolean' ? (baseUpdated.isActive ? 'Activo' : 'Inactivo') : 'Desconocido',
         };
       
       case 'cancellation':
         return {
-          oldValue: originalEvent.isActive ? 'Activo' : 'Inactivo',
-          newValue: updatedEvent.isActive ? 'Activo' : 'Inactivo',
+          oldValue: typeof baseOriginal.isActive === 'boolean' ? (baseOriginal.isActive ? 'Activo' : 'Inactivo') : 'Desconocido',
+          newValue: typeof baseUpdated.isActive === 'boolean' ? (baseUpdated.isActive ? 'Activo' : 'Inactivo') : 'Desconocido',
         };
       
       default:

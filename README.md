@@ -19,10 +19,10 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **Testing:** Jest
 - **Validation:** Class-validator
 - **Architecture:** Clean Architecture with Repository Pattern
-- **Queue System:** Bull with Redis
+- **Messaging:** RabbitMQ
+- **Caching:** N/A
 - **Email Service:** Nodemailer
 - **QR Code Generation:** QRCode
-- **Caching:** Redis
 
 ## 📋 Features
 
@@ -35,7 +35,7 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **Geospatial Queries** (nearby places)
 - **Schedule Management** (open/closed days)
 - **Email Notifications** system for ticket confirmations
-- **Queue-based Event Processing** with Bull and Redis
+- **Event-driven Notifications** over RabbitMQ topics
 - **QR Code Generation** for tickets
 - **Real-time Notifications** for event updates
 - **API Documentation** with Swagger
@@ -54,7 +54,7 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **🔔 Real-time Notifications**: Event updates and ticket status changes
 - **📱 QR Code Tickets**: Digital tickets with QR code generation
 - **👥 User Management**: Complete user authentication and profile system
-- **🗄 Redis Caching**: Improved performance with Redis caching
+- **🗄 Messaging-First Notifications**: Event changes broadcast via RabbitMQ
 
 ## 🏗 Architecture
 
@@ -104,8 +104,6 @@ src/
 │   ├── __tests__/          # Unit tests
 │   ├── email.service.ts
 │   └── email.module.ts
-├── redis/                   # Redis cache module
-│   └── redis.module.ts
 ├── common/                  # Common utilities
 │   └── exceptions/         # Custom exceptions
 ├── config/                  # Configuration files
@@ -396,7 +394,7 @@ npm run test:watch
 - **✅ Phase 4:** Ticket Management (Complete)
 - **✅ Phase 5:** User Management (Complete)
 - **✅ Phase 6:** Notifications & Email System (Complete)
-- **✅ Phase 7:** Queue Processing & Redis Caching (Complete)
+- **✅ Phase 7:** RabbitMQ-based Event Notifications (Complete)
 - **✅ Phase 8:** QR Code Generation (Complete)
 
 ## 📝 License
@@ -418,8 +416,7 @@ This project is licensed under the MIT License.
 
 ### 📧 Communication System
 - **Email Service**: Automated email notifications using Nodemailer
-- **Queue Processing**: Background job processing with Bull and Redis
-- **Event Notifications**: Real-time notifications for event updates
+- **Event Notifications**: RabbitMQ topics + handlers (no additional queue broker)
 
 ### 🏗 Scalable Architecture
 - **Clean Architecture**: Repository pattern with dependency injection
@@ -432,4 +429,3 @@ This project is licensed under the MIT License.
 - **API Documentation**: [https://cultural-places-api.onrender.com/docs](https://cultural-places-api.onrender.com/docs)
 - **Live API**: [https://cultural-places-api.onrender.com](https://cultural-places-api.onrender.com)
 - **GitHub Repository**: [https://github.com/diaznicolasandres1/desarrollo-apps-2-backend-1](https://github.com/diaznicolasandres1/desarrollo-apps-2-backend-1)
-4

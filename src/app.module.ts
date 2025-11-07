@@ -7,7 +7,6 @@ import { UsersModule } from './users/users.module';
 import { CulturalPlacesModule } from './cultural-places/cultural-places.module';
 import { EventsModule } from './events/events.module';
 import { TicketsModule } from './tickets/tickets.module';
-import { RedisModule } from './redis/redis.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { AuthModule } from './auth/auth.module';
 import { CdcModule } from './cdc/cdc.module';
@@ -26,7 +25,6 @@ import { getDatabaseConfig } from './config/database.config';
       }),
       inject: [ConfigService],
     }),
-    RedisModule,
     MetricsModule,
     AuthModule,
     UsersModule,

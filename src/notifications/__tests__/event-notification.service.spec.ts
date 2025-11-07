@@ -2,13 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventNotificationService } from '../event-notification.service';
 import { EmailService } from '../../email/email.service';
 import { TicketsService } from '../../tickets/tickets.service';
-import { getQueueToken } from '@nestjs/bull';
 
 describe('EventNotificationService', () => {
   let service: EventNotificationService;
   let emailService: jest.Mocked<EmailService>;
   let ticketsService: jest.Mocked<TicketsService>;
-  let queue: any;
 
   const mockEvent = {
     _id: '507f1f77bcf86cd799439011',
@@ -53,57 +51,16 @@ describe('EventNotificationService', () => {
             getUsersWithActiveTicketsForEvent: jest.fn(),
           },
         },
-        {
-          provide: getQueueToken('event-notifications'),
-          useValue: {
-            add: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
     service = module.get<EventNotificationService>(EventNotificationService);
     emailService = module.get(EmailService);
     ticketsService = module.get(TicketsService);
-    queue = module.get(getQueueToken('event-notifications'));
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('publishEventChange', () => {
-    it('should publish event change to queue successfully', async () => {
-      const eventChangeData = {
-        event: mockEvent,
-        changeType: 'date_change' as const,
-        oldValue: '30/12/2025',
-        newValue: '31/12/2025',
-      };
-
-      queue.add.mockResolvedValue({ id: 'job-123' });
-
-      await service.publishEventChange(eventChangeData);
-
-      expect(queue.add).toHaveBeenCalledWith('send-notifications', eventChangeData, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 1000 },
-      });
-    });
-
-    it('should handle queue publishing errors', async () => {
-      const eventChangeData = {
-        event: mockEvent,
-        changeType: 'date_change' as const,
-        oldValue: '30/12/2025',
-        newValue: '31/12/2025',
-      };
-
-      const error = new Error('Queue error');
-      queue.add.mockRejectedValue(error);
-
-      await expect(service.publishEventChange(eventChangeData)).rejects.toThrow(error);
-    });
   });
 
   describe('processEventChange', () => {

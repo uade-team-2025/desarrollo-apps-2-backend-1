@@ -12,9 +12,6 @@ import { TicketValidator } from './validators/ticket.validator';
 // Transformers
 import { EventDataTransformer } from './transformers/event-data.transformer';
 
-// Change Detection
-import { EventChangeNotifier } from './change-detection/event-change-notifier.service';
-
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
@@ -24,7 +21,6 @@ export class EventsService {
     private readonly eventValidator: EventValidator,
     private readonly ticketValidator: TicketValidator,
     private readonly eventDataTransformer: EventDataTransformer,
-    private readonly eventChangeNotifier: EventChangeNotifier
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
@@ -98,8 +94,6 @@ export class EventsService {
       throw new NotFoundException('Event not found');
     }
 
-    await this.eventChangeNotifier.notifyEventChange(id, originalEvent, updateData, updatedEvent);
-
     return updatedEvent;
   }
 
@@ -113,9 +107,6 @@ export class EventsService {
     if (!event) {
       throw new NotFoundException('Event not found');
     }
-
-    // Notificar cambios de estado si los hay
-    await this.eventChangeNotifier.notifyStatusChange(id, originalEvent, event);
 
     return event;
   }
