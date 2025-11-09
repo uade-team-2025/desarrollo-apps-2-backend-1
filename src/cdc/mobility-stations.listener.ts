@@ -1,15 +1,29 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Channel, ChannelModel, ConsumeMessage, connect } from 'amqplib';
+import { MobilityStationsMessage } from './interfaces/mobility-stations-message.interface';
+import { MobilityStationRepository } from './repositories/mobility-station.repository';
 
 @Injectable()
-export class MobilityStationsListenerService implements OnModuleInit, OnModuleDestroy {
+export class MobilityStationsListenerService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(MobilityStationsListenerService.name);
+  private readonly exchange = 'citypass_def';
   private readonly queueName = 'movilidad.estaciones.festivalverde';
+  private readonly routingKey = 'movilidad.estaciones.festivalverde';
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly mobilityStationRepository: MobilityStationRepository,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     try {
@@ -24,7 +38,10 @@ export class MobilityStationsListenerService implements OnModuleInit, OnModuleDe
   }
 
   private async connect(): Promise<void> {
-    const url = this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
+    const url = this.configService.get<string>(
+      'RABBITMQ_URL',
+      'amqp://localhost:5672',
+    );
     this.logger.log(
       `Conectando listener de movilidad a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`,
     );
@@ -32,21 +49,45 @@ export class MobilityStationsListenerService implements OnModuleInit, OnModuleDe
     const connection = await connect(url);
     const channel = await connection.createChannel();
 
+    // Asegurar que el exchange existe
+    await channel.assertExchange(this.exchange, 'topic', { durable: true });
+
+    // Declarar la cola
     await channel.assertQueue(this.queueName, { durable: true });
 
-    await channel.consume(this.queueName, (msg) => this.handleMessage(msg), {
-      noAck: false,
-    });
+    // Bindar la cola al exchange con la routing key
+    await channel.bindQueue(this.queueName, this.exchange, this.routingKey);
+
+    // Configurar prefetch para procesar un mensaje a la vez
+    await channel.prefetch(1);
+
+    this.connection = connection;
+    this.channel = channel;
+
+    const consumerOk = await channel.consume(
+      this.queueName,
+      (msg) => {
+        if (msg) {
+          this.handleMessage(msg);
+        }
+      },
+      {
+        noAck: false,
+      },
+    );
 
     connection.on('close', () => {
       this.connection = null;
       this.channel = null;
     });
 
-    this.connection = connection;
-    this.channel = channel;
+    connection.on('error', (error) => {
+      this.logger.error('Error en conexión de RabbitMQ:', error);
+    });
 
-    this.logger.log(`Listener de movilidad suscripto a la cola ${this.queueName}`);
+    this.logger.log(
+      `Listener de movilidad iniciado - Exchange: '${this.exchange}', Routing Key: '${this.routingKey}', Cola: '${this.queueName}', Consumer Tag: '${consumerOk.consumerTag}'`,
+    );
   }
 
   private async close(): Promise<void> {
@@ -59,7 +100,10 @@ export class MobilityStationsListenerService implements OnModuleInit, OnModuleDe
         await this.connection.close();
       }
     } catch (error) {
-      this.logger.error('Error cerrando la conexión del listener de movilidad:', error);
+      this.logger.error(
+        'Error cerrando la conexión del listener de movilidad:',
+        error,
+      );
     } finally {
       this.channel = null;
       this.connection = null;
@@ -68,22 +112,40 @@ export class MobilityStationsListenerService implements OnModuleInit, OnModuleDe
 
   private handleMessage(message: ConsumeMessage | null): void {
     if (!message) {
+      this.logger.warn('Mensaje nulo recibido en el listener de movilidad');
       return;
     }
 
     try {
       const content = message.content.toString();
-      const parsed = JSON.parse(content);
+      const parsed: MobilityStationsMessage = JSON.parse(content);
 
       this.logger.log(
-        `Mensaje recibido en ${this.queueName}: ${JSON.stringify(parsed, null, 2)}`,
+        `Mensaje recibido - Event ID: ${parsed.eventId}, Estaciones: ${parsed.stations.length}, Modo: ${parsed.metadata.mode}`,
       );
 
-      this.channel?.ack(message);
+      // Persistir en la BD
+      this.mobilityStationRepository
+        .saveMobilityStationsMessage(parsed)
+        .then(() => {
+          this.logger.log(
+            `✓ Estaciones procesadas y guardadas en BD (evento: ${parsed.eventId})`,
+          );
+          this.channel?.ack(message);
+        })
+        .catch((error) => {
+          this.logger.error(
+            `Error persistiendo estaciones en BD: ${error.message}`,
+            error.stack,
+          );
+          this.channel?.nack(message, false, false);
+        });
     } catch (error) {
-      this.logger.error('Error procesando mensaje de movilidad:', error);
+      this.logger.error(
+        `Error procesando mensaje de movilidad: ${error.message}`,
+        error.stack,
+      );
       this.channel?.nack(message, false, false);
     }
   }
 }
-

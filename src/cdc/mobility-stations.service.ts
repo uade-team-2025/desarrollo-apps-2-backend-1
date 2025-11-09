@@ -1,15 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RabbitMqPublisherService } from './rabbitmq-publisher.service';
 import {
   MobilityStation,
   MobilityStationsMessage,
 } from './interfaces/mobility-stations-message.interface';
+import { RabbitMqPublisherService } from './rabbitmq-publisher.service';
 
 @Injectable()
 export class MobilityStationsService {
   private readonly logger = new Logger(MobilityStationsService.name);
 
-  constructor(private readonly rabbitMqPublisherService: RabbitMqPublisherService) {}
+  constructor(
+    private readonly rabbitMqPublisherService: RabbitMqPublisherService,
+  ) {}
 
   async publishStations(
     eventId: string,
@@ -29,10 +31,9 @@ export class MobilityStationsService {
     await this.rabbitMqPublisherService.sendMobilityStationsMessage(message);
 
     this.logger.log(
-      `Mensaje mock enviado a ${this.constructor.name} -> cola movilidad.estaciones.festivalverde (${mode})`,
+      `Mensaje de movilidad publicado - Event ID: ${eventId}, Modo: ${mode}`,
     );
 
     return message;
   }
 }
-

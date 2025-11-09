@@ -1,12 +1,23 @@
-import { Injectable, Logger, Inject, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { connect, ChannelModel, Channel, ConsumeMessage } from 'amqplib';
-import { EventChangeHandler, EventChangeMessage } from './interfaces/event-change-handler.interface';
+import { Channel, ChannelModel, connect, ConsumeMessage } from 'amqplib';
+import {
+  EventChangeHandler,
+  EventChangeMessage,
+} from './interfaces/event-change-handler.interface';
 
 export const EVENT_CHANGE_HANDLERS = 'EVENT_CHANGE_HANDLERS';
 
 @Injectable()
-export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy {
+export class EventChangeListenerService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(EventChangeListenerService.name);
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
@@ -24,7 +35,10 @@ export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy
     try {
       await this.connect();
     } catch (error) {
-      this.logger.error('No se pudo iniciar el listener de cambios de eventos:', error);
+      this.logger.error(
+        'No se pudo iniciar el listener de cambios de eventos:',
+        error,
+      );
     }
   }
 
@@ -33,8 +47,13 @@ export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy
   }
 
   private async connect(): Promise<void> {
-    const url = this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
-    this.logger.log(`Conectando listener de cambios de eventos a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`);
+    const url = this.configService.get<string>(
+      'RABBITMQ_URL',
+      'amqp://localhost:5672',
+    );
+    this.logger.log(
+      `Conectando listener de cambios de eventos a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`,
+    );
 
     const connection = await connect(url);
     const channel = await connection.createChannel();
@@ -43,9 +62,20 @@ export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy
     await channel.assertQueue(this.queueName, { durable: true });
     await channel.bindQueue(this.queueName, this.exchangeName, this.routingKey);
 
-    await channel.consume(this.queueName, (msg) => this.handleMessage(msg), {
-      noAck: false,
-    });
+    // Configurar prefetch para procesar un mensaje a la vez
+    await channel.prefetch(1);
+
+    const consumerOk = await channel.consume(
+      this.queueName,
+      (msg) => {
+        if (msg) {
+          this.handleMessage(msg);
+        }
+      },
+      {
+        noAck: false,
+      },
+    );
 
     connection.on('close', () => {
       this.connection = null;
@@ -55,7 +85,9 @@ export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy
     this.connection = connection;
     this.channel = channel;
 
-    this.logger.log(`Listener de cambios de eventos suscripto a ${this.exchangeName}:${this.routingKey}`);
+    this.logger.log(
+      `Listener de cambios de eventos suscripto a ${this.exchangeName}:${this.routingKey}`,
+    );
   }
 
   private async close(): Promise<void> {
@@ -67,7 +99,10 @@ export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy
         await this.connection.close();
       }
     } catch (error) {
-      this.logger.error('Error cerrando la conexión del listener de eventos:', error);
+      this.logger.error(
+        'Error cerrando la conexión del listener de eventos:',
+        error,
+      );
     } finally {
       this.channel = null;
       this.connection = null;
@@ -84,7 +119,9 @@ export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy
       const handler = this.handlers.find((h) => h.canHandle(parsed));
 
       if (!handler) {
-        this.logger.debug('Mensaje de evento sin handler asociado. Se confirma.');
+        this.logger.debug(
+          'Mensaje de evento sin handler asociado. Se confirma.',
+        );
         this.channel?.ack(message);
         return;
       }
@@ -97,4 +134,3 @@ export class EventChangeListenerService implements OnModuleInit, OnModuleDestroy
     }
   }
 }
-
