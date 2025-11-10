@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -38,6 +39,23 @@ export class MobilityStationsController {
   })
   async get() {
     const stations = await this.mobilityStationRepository.getLatestStations();
+    return stations;
+  }
+
+  @Get(':eventId')
+  @ApiOperation({
+    summary: 'Obtener estaciones de movilidad por evento ID',
+    description:
+      'Devuelve todas las estaciones de movilidad para un evento específico.',
+  })
+  @ApiResponse({ status: 200, description: 'Estaciones del evento' })
+  @ApiResponse({
+    status: 404,
+    description: 'No hay estaciones para este evento',
+  })
+  async getByEventId(@Param('eventId') eventId: string) {
+    const stations =
+      await this.mobilityStationRepository.getLatestStationsByEventId(eventId);
     return stations;
   }
 
