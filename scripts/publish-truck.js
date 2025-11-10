@@ -6,7 +6,7 @@ const exchange = 'citypass_def';
 const routingKey = 'residuos.camion.festivalverde';
 
 const message = {
-  eventId: '68f16da988ab442ddbb63d77',
+  eventId: '68d44d2663d135b1b22cb970',
   truckId: 'truck-001',
   position: {
     lat: -34.6037,

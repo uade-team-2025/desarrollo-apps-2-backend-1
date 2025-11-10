@@ -19,7 +19,7 @@ const message = {
     { stationId: 'station-9', lt: -34.6115, lg: -58.3775, count: 5 },
     { stationId: 'station-10', lt: -34.6085, lg: -58.378, count: 11 },
     { stationId: 'station-11', lt: -34.6125, lg: -58.38, count: 14 },
-    { stationId: 'station-12', lt: -34.61, lg: -58.384, count: 7 },
+    { stationId: 'station-12', lt: -34.61, lg: -58.384, count: 10 },
     { stationId: 'station-13', lt: -34.6075, lg: -58.381, count: 8 },
     { stationId: 'station-14', lt: -34.6135, lg: -58.379, count: 6 },
     { stationId: 'station-15', lt: -34.6098, lg: -58.377, count: 10 },
