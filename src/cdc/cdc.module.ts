@@ -22,10 +22,14 @@ import { MobilityStationsListenerService } from './mobility-stations.listener';
 import { MobilityStationsService } from './mobility-stations.service';
 import { RabbitMqPublisherService } from './rabbitmq-publisher.service';
 import { MobilityStationRepository } from './repositories/mobility-station.repository';
+import { TruckRepository } from './repositories/truck.repository';
+import { ResiduosTruckListenerService } from './residuos-truck.listener';
+import { ResiduosTrucksController } from './residuos-trucks.controller';
 import {
   MobilityStationRecord,
   MobilityStationSchema,
 } from './schemas/mobility-station.schema';
+import { TruckRecord, TruckSchema } from './schemas/truck.schema';
 
 @Module({
   imports: [
@@ -34,9 +38,10 @@ import {
     NotificationsModule,
     MongooseModule.forFeature([
       { name: MobilityStationRecord.name, schema: MobilityStationSchema },
+      { name: TruckRecord.name, schema: TruckSchema },
     ]),
   ],
-  controllers: [MobilityStationsController],
+  controllers: [MobilityStationsController, ResiduosTrucksController],
   providers: [
     RabbitMqPublisherService,
     ChangeStreamsListenerService,
@@ -48,6 +53,8 @@ import {
     MobilityStationsService,
     MobilityStationsListenerService,
     MobilityStationRepository,
+    ResiduosTruckListenerService,
+    TruckRepository,
     {
       provide: CULTURAL_PLACE_CHANGE_HANDLERS,
       useFactory: (...handlers: CulturalPlaceChangeHandler[]) => handlers,
@@ -65,6 +72,8 @@ import {
     EventChangeListenerService,
     MobilityStationsService,
     MobilityStationRepository,
+    ResiduosTruckListenerService,
+    TruckRepository,
   ],
 })
 export class CdcModule {}

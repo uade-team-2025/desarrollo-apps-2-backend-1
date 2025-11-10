@@ -53,6 +53,10 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
           queue: 'movilidad.estaciones.festivalverde',
           routingKey: 'movilidad.estaciones.festivalverde',
         },
+        {
+          queue: 'residuos.camion.festivalverde',
+          routingKey: 'residuos.camion.festivalverde',
+        },
       ];
 
       for (const { queue, routingKey } of queuesAndRoutingKeys) {
