@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 import { MobilityStationsMessage } from './interfaces/mobility-stations-message.interface';
@@ -8,43 +13,65 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMqPublisherService.name);
   private connection: any = null;
   private channel: any = null;
-  private readonly mobilityQueueName = 'movilidad.estaciones.festivalverde';
 
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
     try {
-      const url = this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
-      this.logger.log(`Conectando a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`);
-      
+      const url = this.configService.get<string>(
+        'RABBITMQ_URL',
+        'amqp://localhost:5672',
+      );
+      this.logger.log(
+        `Conectando a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`,
+      );
+
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
-      
-      // Declarar exchanges por dominio
-      await this.channel.assertExchange('cultura.evento', 'topic', { durable: true });
-      await this.channel.assertExchange('cultura.espacio', 'topic', { durable: true });
-      await this.channel.assertExchange('cultura.ticket', 'topic', { durable: true });
 
-      // Crear colas por tipo de cambio identificado (crear/modificar)
-      await this.channel.assertQueue('cultura.evento.crear', { durable: true });
-      await this.channel.assertQueue('cultura.evento.modificar', { durable: true });
-      await this.channel.assertQueue('cultura.espacio.crear', { durable: true });
-      await this.channel.assertQueue('cultura.espacio.modificar', { durable: true });
-      await this.channel.assertQueue('cultura.ticket.crear', { durable: true });
-      await this.channel.assertQueue('cultura.ticket.modificar', { durable: true });
-      await this.channel.assertQueue(this.mobilityQueueName, { durable: true });
+      // Asegurar que el exchange existe
+      const exchange = 'citypass_def';
+      await this.channel.assertExchange(exchange, 'topic', { durable: true });
 
-      // Vincular colas a exchanges según routing key
-      await this.channel.bindQueue('cultura.evento.crear', 'cultura.evento', 'crear');
-      await this.channel.bindQueue('cultura.evento.modificar', 'cultura.evento', 'modificar');
-      await this.channel.bindQueue('cultura.espacio.crear', 'cultura.espacio', 'crear');
-      await this.channel.bindQueue('cultura.espacio.modificar', 'cultura.espacio', 'modificar');
-      await this.channel.bindQueue('cultura.ticket.crear', 'cultura.ticket', 'crear');
-      await this.channel.bindQueue('cultura.ticket.modificar', 'cultura.ticket', 'modificar');
+      const queuesAndRoutingKeys = [
+        { queue: 'cultura.evento.crear', routingKey: 'cultura.evento.crear' },
+        {
+          queue: 'cultura.evento.modificar',
+          routingKey: 'cultura.evento.modificar',
+        },
+        { queue: 'cultura.espacio.crear', routingKey: 'cultura.espacio.crear' },
+        {
+          queue: 'cultura.espacio.modificar',
+          routingKey: 'cultura.espacio.modificar',
+        },
+        { queue: 'cultura.ticket.crear', routingKey: 'cultura.ticket.crear' },
+        {
+          queue: 'cultura.ticket.modificar',
+          routingKey: 'cultura.ticket.modificar',
+        },
+        {
+          queue: 'movilidad.estaciones.festivalverde',
+          routingKey: 'movilidad.estaciones.festivalverde',
+        },
+        {
+          queue: 'residuos.camion.festivalverde',
+          routingKey: 'residuos.camion.festivalverde',
+        },
+      ];
 
-      this.logger.log('RabbitMQ Publisher conectado exitosamente - Exchanges y colas (crear/modificar) registrados');
+      for (const { queue, routingKey } of queuesAndRoutingKeys) {
+        await this.channel.assertQueue(queue, { durable: true });
+        await this.channel.bindQueue(queue, exchange, routingKey);
+      }
+
+      this.logger.log(
+        `RabbitMQ Publisher conectado exitosamente - Exchange '${exchange}' (topic) y ${queuesAndRoutingKeys.length} colas registradas`,
+      );
     } catch (error) {
-      this.logger.error('Error conectando a RabbitMQ - CDC no estará disponible:', error.message);
+      this.logger.error(
+        'Error conectando a RabbitMQ - CDC no estará disponible:',
+        error.message,
+      );
       // No lanzar error para que la app siga funcionando aunque RabbitMQ no esté disponible
       // throw error;
     }
@@ -66,12 +93,6 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
         throw new Error('RabbitMQ channel no está disponible');
       }
 
-      const exchangeMap: Record<string, string> = {
-        events: 'cultura.evento',
-        culturalplaces: 'cultura.espacio',
-        tickets: 'cultura.ticket',
-      };
-
       const routingKeyMap: Record<string, string> = {
         INSERT: 'crear',
         UPDATE: 'modificar',
@@ -79,16 +100,17 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
         DELETE: 'modificar',
       };
 
-      const exchange = exchangeMap[collection] ?? `cultura.${collection}`;
-      const routingKey = routingKeyMap[event.eventType] ?? 'modificar';
+      const exchange = 'citypass_def';
+      const operation = routingKeyMap[event.eventType] ?? 'modificar';
+      const routingKey = `cultura.${collection}.${operation}`;
       const message = JSON.stringify(event);
 
       this.channel.publish(exchange, routingKey, Buffer.from(message), {
         persistent: true,
       });
-      
+
       this.logger.debug(
-        `Evento publicado a tópico: ${exchange} (${routingKey}) - ${event.documentId} - mensaje: ${message}`,
+        `Evento publicado al exchange '${exchange}' con routing key '${routingKey}' - ${event.documentId}`,
       );
     } catch (error) {
       this.logger.error(`Error publicando a RabbitMQ:`, error);
@@ -96,30 +118,28 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async sendMobilityStationsMessage(message: MobilityStationsMessage): Promise<void> {
+  async sendMobilityStationsMessage(
+    message: MobilityStationsMessage,
+  ): Promise<void> {
     try {
       if (!this.channel) {
         throw new Error('RabbitMQ channel no está disponible');
       }
 
+      const exchange = 'citypass_def';
+      const routingKey = 'movilidad.estaciones.festivalverde';
       const payload = JSON.stringify(message);
-      const wasQueued = this.channel.sendToQueue(this.mobilityQueueName, Buffer.from(payload), {
+
+      this.channel.publish(exchange, routingKey, Buffer.from(payload), {
         persistent: true,
       });
 
-      if (!wasQueued) {
-        this.logger.warn(
-          `El buffer del canal está lleno al publicar en ${this.mobilityQueueName}. El mensaje se enviará cuando sea posible.`,
-        );
-      }
-
       this.logger.debug(
-        `Mensaje de movilidad enviado a ${this.mobilityQueueName} - contenido: ${payload}`,
+        `Mensaje de movilidad publicado al exchange '${exchange}' con routing key '${routingKey}'`,
       );
     } catch (error) {
-      this.logger.error(`Error enviando mensaje a la cola de movilidad:`, error);
+      this.logger.error(`Error enviando mensaje de movilidad:`, error);
       throw error;
     }
   }
 }
-

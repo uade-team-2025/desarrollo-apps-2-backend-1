@@ -1,13 +1,21 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Inject } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import amqp, { ChannelModel, Channel, ConsumeMessage } from 'amqplib';
-import { CulturalPlaceChangeMessage } from './interfaces/cultural-place-change-message.interface';
+import amqp, { Channel, ChannelModel, ConsumeMessage } from 'amqplib';
 import { CulturalPlaceChangeHandler } from './interfaces/cultural-place-change-handler.interface';
+import { CulturalPlaceChangeMessage } from './interfaces/cultural-place-change-message.interface';
 
 export const CULTURAL_PLACE_CHANGE_HANDLERS = 'CULTURAL_PLACE_CHANGE_HANDLERS';
 
 @Injectable()
-export class CulturalPlaceChangeListenerService implements OnModuleInit, OnModuleDestroy {
+export class CulturalPlaceChangeListenerService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(CulturalPlaceChangeListenerService.name);
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
@@ -25,7 +33,10 @@ export class CulturalPlaceChangeListenerService implements OnModuleInit, OnModul
     try {
       await this.connect();
     } catch (error) {
-      this.logger.error('No se pudo iniciar el listener de cambios de lugares culturales:', error);
+      this.logger.error(
+        'No se pudo iniciar el listener de cambios de lugares culturales:',
+        error,
+      );
     }
   }
 
@@ -34,8 +45,13 @@ export class CulturalPlaceChangeListenerService implements OnModuleInit, OnModul
   }
 
   private async connect(): Promise<void> {
-    const url = this.configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
-    this.logger.log(`Conectando listener de lugares culturales a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`);
+    const url = this.configService.get<string>(
+      'RABBITMQ_URL',
+      'amqp://localhost:5672',
+    );
+    this.logger.log(
+      `Conectando listener de lugares culturales a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`,
+    );
 
     const connection = await amqp.connect(url);
     this.connection = connection;
@@ -47,11 +63,24 @@ export class CulturalPlaceChangeListenerService implements OnModuleInit, OnModul
     await channel.assertQueue(this.queueName, { durable: true });
     await channel.bindQueue(this.queueName, this.exchangeName, this.routingKey);
 
-    await channel.consume(this.queueName, (msg) => this.handleMessage(msg), {
-      noAck: false,
-    });
+    // Configurar prefetch para procesar un mensaje a la vez
+    await channel.prefetch(1);
 
-    this.logger.log(`Listener suscripto a ${this.exchangeName}:${this.routingKey}`);
+    const consumerOk = await channel.consume(
+      this.queueName,
+      (msg) => {
+        if (msg) {
+          this.handleMessage(msg);
+        }
+      },
+      {
+        noAck: false,
+      },
+    );
+
+    this.logger.log(
+      `Listener suscripto a ${this.exchangeName}:${this.routingKey}`,
+    );
   }
 
   private async close(): Promise<void> {
@@ -64,9 +93,14 @@ export class CulturalPlaceChangeListenerService implements OnModuleInit, OnModul
         await this.connection.close();
         this.connection = null;
       }
-      this.logger.log('Listener de lugares culturales desconectado de RabbitMQ');
+      this.logger.log(
+        'Listener de lugares culturales desconectado de RabbitMQ',
+      );
     } catch (error) {
-      this.logger.error('Error cerrando la conexión de RabbitMQ para el listener de lugares culturales:', error);
+      this.logger.error(
+        'Error cerrando la conexión de RabbitMQ para el listener de lugares culturales:',
+        error,
+      );
     }
   }
 
@@ -76,12 +110,16 @@ export class CulturalPlaceChangeListenerService implements OnModuleInit, OnModul
     }
 
     try {
-      const parsed: CulturalPlaceChangeMessage = JSON.parse(message.content.toString());
+      const parsed: CulturalPlaceChangeMessage = JSON.parse(
+        message.content.toString(),
+      );
 
       const handler = this.handlers.find((h) => h.canHandle(parsed));
 
       if (!handler) {
-        this.logger.debug('Mensaje de lugar cultural sin handler asociado. Se confirma.');
+        this.logger.debug(
+          'Mensaje de lugar cultural sin handler asociado. Se confirma.',
+        );
         this.channel?.ack(message);
         return;
       }
@@ -89,9 +127,11 @@ export class CulturalPlaceChangeListenerService implements OnModuleInit, OnModul
       await handler.handle(parsed);
       this.channel?.ack(message);
     } catch (error) {
-      this.logger.error('Error procesando mensaje de lugar cultural. Se descarta.', error);
+      this.logger.error(
+        'Error procesando mensaje de lugar cultural. Se descarta.',
+        error,
+      );
       this.channel?.nack(message, false, false);
     }
   }
 }
-

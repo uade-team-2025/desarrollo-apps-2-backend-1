@@ -6,30 +6,30 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Channel, ChannelModel, ConsumeMessage, connect } from 'amqplib';
-import { MobilityStationsMessage } from './interfaces/mobility-stations-message.interface';
-import { MobilityStationRepository } from './repositories/mobility-station.repository';
+import { TruckMessage } from './interfaces/truck-message.interface';
+import { TruckRepository } from './repositories/truck.repository';
 
 @Injectable()
-export class MobilityStationsListenerService
+export class ResiduosTruckListenerService
   implements OnModuleInit, OnModuleDestroy
 {
-  private readonly logger = new Logger(MobilityStationsListenerService.name);
+  private readonly logger = new Logger(ResiduosTruckListenerService.name);
   private readonly exchange = 'citypass_def';
-  private readonly queueName = 'movilidad.estaciones.festivalverde';
-  private readonly routingKey = 'movilidad.estaciones.festivalverde';
+  private readonly queueName = 'residuos.camion.festivalverde';
+  private readonly routingKey = 'residuos.camion.festivalverde';
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly mobilityStationRepository: MobilityStationRepository,
+    private readonly truckRepository: TruckRepository,
   ) {}
 
   async onModuleInit(): Promise<void> {
     try {
       await this.connect();
     } catch (error) {
-      this.logger.error('No se pudo iniciar el listener de movilidad:', error);
+      this.logger.error('No se pudo iniciar el listener de camiones:', error);
     }
   }
 
@@ -43,7 +43,7 @@ export class MobilityStationsListenerService
       'amqp://localhost:5672',
     );
     this.logger.log(
-      `Conectando listener de movilidad a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`,
+      `Conectando listener de camiones a RabbitMQ: ${url.replace(/:[^:@]+@/, ':****@')}`,
     );
 
     const connection = await connect(url);
@@ -86,7 +86,7 @@ export class MobilityStationsListenerService
     });
 
     this.logger.log(
-      `Listener de movilidad iniciado - Exchange: '${this.exchange}', Routing Key: '${this.routingKey}', Cola: '${this.queueName}', Consumer Tag: '${consumerOk.consumerTag}'`,
+      `Listener de camiones iniciado - Exchange: '${this.exchange}', Routing Key: '${this.routingKey}', Cola: '${this.queueName}', Consumer Tag: '${consumerOk.consumerTag}'`,
     );
   }
 
@@ -101,7 +101,7 @@ export class MobilityStationsListenerService
       }
     } catch (error) {
       this.logger.error(
-        'Error cerrando la conexión del listener de movilidad:',
+        'Error cerrando la conexión del listener de camiones:',
         error,
       );
     } finally {
@@ -112,37 +112,37 @@ export class MobilityStationsListenerService
 
   private handleMessage(message: ConsumeMessage | null): void {
     if (!message) {
-      this.logger.warn('Mensaje nulo recibido en el listener de movilidad');
+      this.logger.warn('Mensaje nulo recibido en el listener de camiones');
       return;
     }
 
     try {
       const content = message.content.toString();
-      const parsed: MobilityStationsMessage = JSON.parse(content);
+      const parsed: TruckMessage = JSON.parse(content);
 
       this.logger.log(
-        `Mensaje recibido - Event ID: ${parsed.eventId}, Estaciones: ${parsed.stations.length}, Modo: ${parsed.metadata.mode}`,
+        `Mensaje recibido - Event ID: ${parsed.eventId}, Camión: ${parsed.truckId}, Posición: (${parsed.position.lat}, ${parsed.position.long})`,
       );
 
       // Persistir en la BD
-      this.mobilityStationRepository
-        .saveMobilityStationsMessage(parsed)
+      this.truckRepository
+        .saveTruckMessage(parsed)
         .then(() => {
           this.logger.log(
-            `✓ Estaciones procesadas y guardadas en BD (evento: ${parsed.eventId})`,
+            `✓ Camión procesado y guardado en BD (evento: ${parsed.eventId}, camión: ${parsed.truckId})`,
           );
           this.channel?.ack(message);
         })
         .catch((error) => {
           this.logger.error(
-            `Error persistiendo estaciones en BD: ${error.message}`,
+            `Error persistiendo camión en BD: ${error.message}`,
             error.stack,
           );
           this.channel?.nack(message, false, false);
         });
     } catch (error) {
       this.logger.error(
-        `Error procesando mensaje de movilidad: ${error.message}`,
+        `Error procesando mensaje de camión: ${error.message}`,
         error.stack,
       );
       this.channel?.nack(message, false, false);

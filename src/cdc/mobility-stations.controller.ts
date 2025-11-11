@@ -1,7 +1,17 @@
-import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { MobilityStation } from './interfaces/mobility-stations-message.interface';
 import { MobilityStationsService } from './mobility-stations.service';
-import { MobilityStation } from './interfaces/mobility-stations-message.interface';
+import { MobilityStationRepository } from './repositories/mobility-station.repository';
 
 interface MobilityStationsRequest {
   eventId?: unknown;
@@ -11,12 +21,49 @@ interface MobilityStationsRequest {
 @ApiTags('mobility')
 @Controller('mobility/stations')
 export class MobilityStationsController {
-  constructor(private readonly mobilityStationsService: MobilityStationsService) {}
+  constructor(
+    private readonly mobilityStationsService: MobilityStationsService,
+    private readonly mobilityStationRepository: MobilityStationRepository,
+  ) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Obtener estaciones de movilidad guardadas desde la BD',
+    description:
+      'Devuelve un objeto MobilityStationsMessage con estaciones guardadas en la base de datos.',
+  })
+  @ApiResponse({ status: 200, description: 'Mensaje con estaciones devuelto' })
+  @ApiResponse({
+    status: 404,
+    description: 'No hay estaciones guardadas en la base de datos',
+  })
+  async get() {
+    const stations = await this.mobilityStationRepository.getLatestStations();
+    return stations;
+  }
+
+  @Get(':eventId')
+  @ApiOperation({
+    summary: 'Obtener estaciones de movilidad por evento ID',
+    description:
+      'Devuelve todas las estaciones de movilidad para un evento específico.',
+  })
+  @ApiResponse({ status: 200, description: 'Estaciones del evento' })
+  @ApiResponse({
+    status: 404,
+    description: 'No hay estaciones para este evento',
+  })
+  async getByEventId(@Param('eventId') eventId: string) {
+    const stations =
+      await this.mobilityStationRepository.getLatestStationsByEventId(eventId);
+    return stations;
+  }
 
   @Post('mock')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
-    summary: 'Publicar un mensaje mock en la cola movilidad.estaciones.festivalverde',
+    summary:
+      'Publicar un mensaje mock en la cola movilidad.estaciones.festivalverde',
     description:
       'Encola un mensaje de estaciones mockeadas. Acepta un array de estaciones o un único objeto para actualizaciones puntuales.',
   })
@@ -29,7 +76,11 @@ export class MobilityStationsController {
     const eventId = this.parseEventId(body.eventId);
     const { stations, mode } = this.parseStations(body.stations);
 
-    const message = await this.mobilityStationsService.publishStations(eventId, stations, mode);
+    const message = await this.mobilityStationsService.publishStations(
+      eventId,
+      stations,
+      mode,
+    );
 
     return {
       status: 'queued',
@@ -42,24 +93,35 @@ export class MobilityStationsController {
 
   private parseEventId(eventId: unknown): string {
     if (typeof eventId !== 'string' || eventId.trim().length === 0) {
-      throw new BadRequestException('eventId es obligatorio y debe ser una cadena.');
+      throw new BadRequestException(
+        'eventId es obligatorio y debe ser una cadena.',
+      );
     }
     return eventId.trim();
   }
 
-  private parseStations(rawStations: unknown): { stations: MobilityStation[]; mode: 'bulk' | 'update' } {
+  private parseStations(rawStations: unknown): {
+    stations: MobilityStation[];
+    mode: 'bulk' | 'update';
+  } {
     if (!rawStations) {
       throw new BadRequestException('stations es obligatorio.');
     }
 
     const isArray = Array.isArray(rawStations);
-    const candidateStations = (isArray ? rawStations : [rawStations]) as unknown[];
+    const candidateStations = (
+      isArray ? rawStations : [rawStations]
+    ) as unknown[];
 
     if (candidateStations.length === 0) {
-      throw new BadRequestException('stations debe contener al menos una estación.');
+      throw new BadRequestException(
+        'stations debe contener al menos una estación.',
+      );
     }
 
-    const stations = candidateStations.map((station, index) => this.parseStation(station, index));
+    const stations = candidateStations.map((station, index) =>
+      this.parseStation(station, index),
+    );
 
     return {
       stations,
@@ -69,18 +131,25 @@ export class MobilityStationsController {
 
   private parseStation(station: unknown, index: number): MobilityStation {
     if (!station || typeof station !== 'object') {
-      throw new BadRequestException(`stations[${index}] debe ser un objeto con los datos de la estación.`);
+      throw new BadRequestException(
+        `stations[${index}] debe ser un objeto con los datos de la estación.`,
+      );
     }
 
     const { stationId, lt, lg, count } = station as Record<string, unknown>;
 
     if (typeof stationId !== 'string' || stationId.trim().length === 0) {
-      throw new BadRequestException(`stationId inválido en stations[${index}].`);
+      throw new BadRequestException(
+        `stationId inválido en stations[${index}].`,
+      );
     }
 
     const parsedLt = this.parseNumber(lt, `lt inválido en stations[${index}].`);
     const parsedLg = this.parseNumber(lg, `lg inválido en stations[${index}].`);
-    const parsedCount = this.parseNumber(count, `count inválido en stations[${index}].`);
+    const parsedCount = this.parseNumber(
+      count,
+      `count inválido en stations[${index}].`,
+    );
 
     return {
       stationId: stationId.trim(),
@@ -98,4 +167,3 @@ export class MobilityStationsController {
     return parsed;
   }
 }
-
