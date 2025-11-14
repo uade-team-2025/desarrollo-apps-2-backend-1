@@ -31,41 +31,41 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
 
       // Asegurar que el exchange existe
       const exchange = 'citypass_def';
-      await this.channel.assertExchange(exchange, 'topic', { durable: true });
+      // await this.channel.assertExchange(exchange, 'topic', { durable: true });
 
-      const queuesAndRoutingKeys = [
-        { queue: 'cultura.evento.crear', routingKey: 'cultura.evento.crear' },
-        {
-          queue: 'cultura.evento.modificar',
-          routingKey: 'cultura.evento.modificar',
-        },
-        { queue: 'cultura.espacio.crear', routingKey: 'cultura.espacio.crear' },
-        {
-          queue: 'cultura.espacio.modificar',
-          routingKey: 'cultura.espacio.modificar',
-        },
-        { queue: 'cultura.ticket.crear', routingKey: 'cultura.ticket.crear' },
-        {
-          queue: 'cultura.ticket.modificar',
-          routingKey: 'cultura.ticket.modificar',
-        },
-        {
-          queue: 'movilidad.estaciones.festivalverde',
-          routingKey: 'movilidad.estaciones.festivalverde',
-        },
-        {
-          queue: 'residuos.camion.festivalverde',
-          routingKey: 'residuos.camion.festivalverde',
-        },
-      ];
+      // const queuesAndRoutingKeys = [
+      //   { queue: 'cultura.evento.crear', routingKey: 'cultura.evento.crear' },
+      //   {
+      //     queue: 'cultura.evento.modificar',
+      //     routingKey: 'cultura.evento.modificar',
+      //   },
+      //   { queue: 'cultura.espacio.crear', routingKey: 'cultura.espacio.crear' },
+      //   {
+      //     queue: 'cultura.espacio.modificar',
+      //     routingKey: 'cultura.espacio.modificar',
+      //   },
+      //   { queue: 'cultura.ticket.crear', routingKey: 'cultura.ticket.crear' },
+      //   {
+      //     queue: 'cultura.ticket.modificar',
+      //     routingKey: 'cultura.ticket.modificar',
+      //   },
+      //   {
+      //     queue: 'movilidad.estaciones.festivalverde',
+      //     routingKey: 'movilidad.estaciones.festivalverde',
+      //   },
+      //   {
+      //     queue: 'residuos.camion.festivalverde',
+      //     routingKey: 'residuos.camion.festivalverde',
+      //   },
+      // ];
 
-      for (const { queue, routingKey } of queuesAndRoutingKeys) {
-        await this.channel.assertQueue(queue, { durable: true });
-        await this.channel.bindQueue(queue, exchange, routingKey);
-      }
+      // for (const { queue, routingKey } of queuesAndRoutingKeys) {
+      //   await this.channel.assertQueue(queue, { durable: true });
+      //   await this.channel.bindQueue(queue, exchange, routingKey);
+      // }
 
       this.logger.log(
-        `RabbitMQ Publisher conectado exitosamente - Exchange '${exchange}' (topic) y ${queuesAndRoutingKeys.length} colas registradas`,
+        `RabbitMQ Publisher conectado exitosamente - Exchange '${exchange}' (topic) `,
       );
     } catch (error) {
       this.logger.error(
