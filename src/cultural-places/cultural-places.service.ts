@@ -22,6 +22,17 @@ export class CulturalPlacesService {
     private readonly culturalPlaceRepository: ICulturalPlaceRepository,
   ) {}
 
+  private resolvePlaceId(place: CulturalPlace): string {
+    const anyPlace = place as any;
+    if (anyPlace?._id) {
+      return typeof anyPlace._id === 'string' ? anyPlace._id : anyPlace._id.toString();
+    }
+    if (anyPlace?.id) {
+      return anyPlace.id;
+    }
+    throw new NotFoundException('Cultural place identifier not found');
+  }
+
   async create(createCulturalPlaceDto: CreateCulturalPlaceDto): Promise<CulturalPlace> {
     try {
       console.log('Creating cultural place with data:', JSON.stringify(createCulturalPlaceDto, null, 2));
@@ -172,7 +183,9 @@ export class CulturalPlacesService {
       throw new NotFoundException('Cultural place not found for provided coordinates');
     }
 
-    const updatedPlace = await this.culturalPlaceRepository.update(place._id.toString(), {
+    const placeId = this.resolvePlaceId(place);
+
+    const updatedPlace = await this.culturalPlaceRepository.update(placeId, {
       status: normalizedStatus,
       isActive: false,
     } as any);
@@ -196,7 +209,9 @@ export class CulturalPlacesService {
       throw new NotFoundException('Cultural place not found for provided coordinates');
     }
 
-    const updatedPlace = await this.culturalPlaceRepository.update(place._id.toString(), {
+    const placeId = this.resolvePlaceId(place);
+
+    const updatedPlace = await this.culturalPlaceRepository.update(placeId, {
       status: 'ACTIVE',
       isActive: true,
     } as any);

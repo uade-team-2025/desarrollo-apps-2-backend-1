@@ -71,6 +71,8 @@ describe('CulturalPlacesService', () => {
 
     service = module.get<CulturalPlacesService>(CulturalPlacesService);
     repository = module.get<ICulturalPlaceRepository>(CULTURAL_PLACE_REPOSITORY);
+
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
