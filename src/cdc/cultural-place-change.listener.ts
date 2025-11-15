@@ -20,8 +20,8 @@ export class CulturalPlaceChangeListenerService
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
   private readonly exchangeName = 'citypass_def';
-  private readonly queueName = 'cultura.espacio.modificar';
-  private readonly routingKey = 'cultura.espacio.modificar';
+  private readonly queueName = 'cultura.culturalplaces.modificar';
+  private readonly routingKey = 'cultura.culturalplaces.modificar';
 
   constructor(
     private readonly configService: ConfigService,
