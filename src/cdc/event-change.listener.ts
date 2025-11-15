@@ -22,8 +22,8 @@ export class EventChangeListenerService
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
   private readonly exchangeName = 'citypass_def';
-  private readonly queueName = 'cultura.evento.modificar';
-  private readonly routingKey = 'cultura.evento.modificar';
+  private readonly queueName = 'cultura.events.modificar';
+  private readonly routingKey = 'cultura.events.modificar';
 
   constructor(
     private readonly configService: ConfigService,
