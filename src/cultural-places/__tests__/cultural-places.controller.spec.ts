@@ -9,6 +9,7 @@ import {
 } from '../dto/cancel-cultural-place-by-location.dto';
 import { CancelCulturalPlacesByRangeDto } from '../dto/cancel-cultural-places-by-range.dto';
 import { ActivateCulturalPlaceByLocationDto } from '../dto/activate-cultural-place-by-location.dto';
+import { ActivateCulturalPlacesByRangeDto } from '../dto/activate-cultural-places-by-range.dto';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('CulturalPlacesController', () => {
@@ -56,6 +57,7 @@ describe('CulturalPlacesController', () => {
     cancelByLocation: jest.fn(),
     cancelByRange: jest.fn(),
     activateByLocation: jest.fn(),
+    activateByRange: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -278,6 +280,23 @@ describe('CulturalPlacesController', () => {
 
       expect(result.status).toBe('ACTIVE');
       expect(service.activateByLocation).toHaveBeenCalledWith(payload);
+    });
+  });
+
+  describe('activateByRange', () => {
+    it('should activate cultural places within range', async () => {
+      const payload: ActivateCulturalPlacesByRangeDto = {
+        latitude: -34.6037,
+        longitude: -58.3816,
+        radiusInMeters: 500,
+      };
+      const activatedPlaces = [{ ...mockCulturalPlace, status: 'ACTIVE', isActive: true }];
+      mockService.activateByRange.mockResolvedValue(activatedPlaces);
+
+      const result = await controller.activateByRange(payload);
+
+      expect(result).toEqual(activatedPlaces);
+      expect(service.activateByRange).toHaveBeenCalledWith(payload);
     });
   });
 });

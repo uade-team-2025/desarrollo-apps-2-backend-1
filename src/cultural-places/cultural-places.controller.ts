@@ -20,6 +20,7 @@ import type { CulturalPlaceQueryDto } from './interfaces/cultural-place.interfac
 import { CancelCulturalPlaceByLocationDto } from './dto/cancel-cultural-place-by-location.dto';
 import { ActivateCulturalPlaceByLocationDto } from './dto/activate-cultural-place-by-location.dto';
 import { CancelCulturalPlacesByRangeDto } from './dto/cancel-cultural-places-by-range.dto';
+import { ActivateCulturalPlacesByRangeDto } from './dto/activate-cultural-places-by-range.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('cultural-places')
@@ -157,5 +158,13 @@ export class CulturalPlacesController {
   @ApiResponse({ status: 404, description: 'Cultural place not found' })
   async activateByLocation(@Body() payload: ActivateCulturalPlaceByLocationDto) {
     return this.culturalPlacesService.activateByLocation(payload);
+  }
+
+  @Post('activate-by-range')
+  @ApiOperation({ summary: 'Activate multiple cultural places inside a radius' })
+  @ApiResponse({ status: 200, description: 'Cultural places activated successfully' })
+  @ApiResponse({ status: 404, description: 'No cultural places found within range' })
+  async activateByRange(@Body() payload: ActivateCulturalPlacesByRangeDto) {
+    return this.culturalPlacesService.activateByRange(payload);
   }
 }
