@@ -105,6 +105,10 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       const routingKey = `cultura.${collection}.${operation}`;
       const message = JSON.stringify(event);
 
+      this.logger.debug(
+        `Payload a publicar (${routingKey}): ${message}`,
+      );
+
       this.channel.publish(exchange, routingKey, Buffer.from(message), {
         persistent: true,
       });
@@ -129,6 +133,10 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       const exchange = 'citypass_def';
       const routingKey = 'movilidad.estaciones.festivalverde';
       const payload = JSON.stringify(message);
+
+      this.logger.debug(
+        `Payload de movilidad a publicar (${routingKey}): ${payload}`,
+      );
 
       this.channel.publish(exchange, routingKey, Buffer.from(payload), {
         persistent: true,
