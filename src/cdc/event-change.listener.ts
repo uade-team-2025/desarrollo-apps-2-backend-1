@@ -21,9 +21,9 @@ export class EventChangeListenerService
   private readonly logger = new Logger(EventChangeListenerService.name);
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
-  private readonly exchangeName = 'cultura.evento';
-  private readonly queueName = 'cultura.evento.notificaciones';
-  private readonly routingKey = 'modificar';
+  private readonly exchangeName = 'citypass_def';
+  private readonly queueName = 'cultura.evento.modificar';
+  private readonly routingKey = 'cultura.evento.modificar';
 
   constructor(
     private readonly configService: ConfigService,

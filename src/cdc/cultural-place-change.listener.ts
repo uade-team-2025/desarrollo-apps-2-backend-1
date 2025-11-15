@@ -19,9 +19,9 @@ export class CulturalPlaceChangeListenerService
   private readonly logger = new Logger(CulturalPlaceChangeListenerService.name);
   private connection: ChannelModel | null = null;
   private channel: Channel | null = null;
-  private readonly exchangeName = 'cultura.espacio';
+  private readonly exchangeName = 'citypass_def';
   private readonly queueName = 'cultura.espacio.modificar';
-  private readonly routingKey = 'modificar';
+  private readonly routingKey = 'cultura.espacio.modificar';
 
   constructor(
     private readonly configService: ConfigService,
