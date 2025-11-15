@@ -2,9 +2,14 @@
 const amqp = require('amqplib');
 
 const url = 'amqp://admin:admin@cultura-rabbit.diaznicolasandres.com:5672';
-const exchange = 'citypass_def';
-const routingKey = 'reclamos.cultura.centros';
-const queueName = 'reclamos.cultura.centros';
+const inputExchange = 'cultura_def';
+const inputRoutingKey = 'reclamos.cultura.centros';
+const inputQueueName = inputExchange;
+
+const outputExchange = 'citypass_def';
+const outputTopic = 'un.topico.salida';
+const outputQueueName = 'un.topico.salida';
+
 
 const message = {
   id_reclamo: 123,
@@ -22,14 +27,19 @@ async function send() {
     const connection = await amqp.connect(url);
     const channel = await connection.createChannel();
 
-    await channel.assertExchange(exchange, 'topic', { durable: true });
-    await channel.assertQueue(queueName, { durable: true });
-    await channel.bindQueue(queueName, exchange, routingKey);
+    await channel.assertExchange(inputExchange, 'topic', { durable: true });
+    await channel.assertQueue(inputQueueName, { durable: true });
+    await channel.bindQueue(inputQueueName, inputExchange, inputRoutingKey);
+
+    await channel.assertExchange(outputExchange, 'topic', { durable: true });
+    await channel.assertQueue(outputQueueName, { durable: true });
+    await channel.bindQueue(outputQueueName, outputExchange, outputTopic);
 
     const payload = Buffer.from(JSON.stringify(message));
-    channel.publish(exchange, routingKey, payload, { persistent: true });
+    channel.publish(inputExchange, inputRoutingKey, payload, { persistent: true });
+    channel.publish(outputExchange, outputTopic, payload, { persistent: true });
 
-    console.log(`✓ Complaint sent to '${routingKey}'`);
+    console.log(`✓ Complaint sent to '${inputRoutingKey}' and '${outputTopic}'`);
     console.log(JSON.stringify(message, null, 2));
 
     await channel.close();
