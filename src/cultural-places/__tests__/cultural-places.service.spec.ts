@@ -2,6 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CulturalPlacesService } from '../cultural-places.service';
 import { ICulturalPlaceRepository, CULTURAL_PLACE_REPOSITORY } from '../interfaces/cultural-place.repository.interface';
 import { CreateCulturalPlaceDto } from '../dto/create-cultural-place.dto';
+import {
+  CancelCulturalPlaceByLocationDto,
+  CulturalPlaceClosureStatus,
+} from '../dto/cancel-cultural-place-by-location.dto';
+import { ActivateCulturalPlaceByLocationDto } from '../dto/activate-cultural-place-by-location.dto';
 import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('CulturalPlacesService', () => {
@@ -45,6 +50,7 @@ describe('CulturalPlacesService', () => {
     findAll: jest.fn(),
     findById: jest.fn(),
     findByName: jest.fn(),
+    findByCoordinates: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
     findByCategory: jest.fn(),
@@ -289,6 +295,81 @@ describe('CulturalPlacesService', () => {
           category: 'Centro de Innovación'
         })
       );
+    });
+  });
+
+  describe('cancelByLocation', () => {
+    const payload: CancelCulturalPlaceByLocationDto = {
+      latitude: -34.6037,
+      longitude: -58.3816,
+      status: CulturalPlaceClosureStatus.CLOSED_DOWN,
+    };
+
+    it('should cancel a cultural place using coordinates', async () => {
+      const updatedPlace = { ...mockCulturalPlace, status: 'CLOSED_DOWN', isActive: false };
+      mockRepository.findByCoordinates.mockResolvedValue(mockCulturalPlace);
+      mockRepository.update.mockResolvedValue(updatedPlace);
+
+      const result = await service.cancelByLocation(payload);
+
+      expect(mockRepository.findByCoordinates).toHaveBeenCalledWith(payload.latitude, payload.longitude);
+      expect(mockRepository.update).toHaveBeenCalledWith(mockCulturalPlace._id, {
+        status: CulturalPlaceClosureStatus.CLOSED_DOWN,
+        isActive: false,
+      });
+      expect(result.status).toBe('CLOSED_DOWN');
+      expect(result.isActive).toBe(false);
+    });
+
+    it('should throw NotFoundException when no place matches coordinates', async () => {
+      mockRepository.findByCoordinates.mockResolvedValue(null);
+
+      await expect(service.cancelByLocation(payload)).rejects.toThrow(NotFoundException);
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when update fails', async () => {
+      mockRepository.findByCoordinates.mockResolvedValue(mockCulturalPlace);
+      mockRepository.update.mockResolvedValue(null);
+
+      await expect(service.cancelByLocation(payload)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('activateByLocation', () => {
+    const payload: ActivateCulturalPlaceByLocationDto = {
+      latitude: -34.6037,
+      longitude: -58.3816,
+    };
+
+    it('should activate a cultural place using coordinates', async () => {
+      const updatedPlace = { ...mockCulturalPlace, status: 'ACTIVE', isActive: true };
+      mockRepository.findByCoordinates.mockResolvedValue(mockCulturalPlace);
+      mockRepository.update.mockResolvedValue(updatedPlace);
+
+      const result = await service.activateByLocation(payload);
+
+      expect(mockRepository.findByCoordinates).toHaveBeenCalledWith(payload.latitude, payload.longitude);
+      expect(mockRepository.update).toHaveBeenCalledWith(mockCulturalPlace._id, {
+        status: 'ACTIVE',
+        isActive: true,
+      });
+      expect(result.status).toBe('ACTIVE');
+      expect(result.isActive).toBe(true);
+    });
+
+    it('should throw NotFoundException when place not found', async () => {
+      mockRepository.findByCoordinates.mockResolvedValue(null);
+
+      await expect(service.activateByLocation(payload)).rejects.toThrow(NotFoundException);
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when update fails', async () => {
+      mockRepository.findByCoordinates.mockResolvedValue(mockCulturalPlace);
+      mockRepository.update.mockResolvedValue(null);
+
+      await expect(service.activateByLocation(payload)).rejects.toThrow(NotFoundException);
     });
   });
 });

@@ -3,6 +3,11 @@ import { CulturalPlacesController } from '../cultural-places.controller';
 import { CulturalPlacesService } from '../cultural-places.service';
 import { CreateCulturalPlaceDto } from '../dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from '../dto/update-cultural-place.dto';
+import {
+  CancelCulturalPlaceByLocationDto,
+  CulturalPlaceClosureStatus,
+} from '../dto/cancel-cultural-place-by-location.dto';
+import { ActivateCulturalPlaceByLocationDto } from '../dto/activate-cultural-place-by-location.dto';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('CulturalPlacesController', () => {
@@ -47,6 +52,8 @@ describe('CulturalPlacesController', () => {
     findByCategory: jest.fn(),
     findOpenPlaces: jest.fn(),
     findTopRated: jest.fn(),
+    cancelByLocation: jest.fn(),
+    activateByLocation: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -210,6 +217,45 @@ describe('CulturalPlacesController', () => {
         lng: -74.0060,
         radius: 5,
       });
+    });
+  });
+
+  describe('cancelByLocation', () => {
+    it('should cancel a cultural place by coordinates', async () => {
+      const payload: CancelCulturalPlaceByLocationDto = {
+        latitude: -34.6037,
+        longitude: -58.3816,
+        status: CulturalPlaceClosureStatus.CLOSED_DOWN,
+      };
+      mockService.cancelByLocation.mockResolvedValue({
+        ...mockCulturalPlace,
+        status: CulturalPlaceClosureStatus.CLOSED_DOWN,
+        isActive: false,
+      });
+
+      const result = await controller.cancelByLocation(payload);
+
+      expect(result.status).toBe(CulturalPlaceClosureStatus.CLOSED_DOWN);
+      expect(service.cancelByLocation).toHaveBeenCalledWith(payload);
+    });
+  });
+
+  describe('activateByLocation', () => {
+    it('should activate a cultural place by coordinates', async () => {
+      const payload: ActivateCulturalPlaceByLocationDto = {
+        latitude: -34.6037,
+        longitude: -58.3816,
+      };
+      mockService.activateByLocation.mockResolvedValue({
+        ...mockCulturalPlace,
+        status: 'ACTIVE',
+        isActive: true,
+      });
+
+      const result = await controller.activateByLocation(payload);
+
+      expect(result.status).toBe('ACTIVE');
+      expect(service.activateByLocation).toHaveBeenCalledWith(payload);
     });
   });
 });

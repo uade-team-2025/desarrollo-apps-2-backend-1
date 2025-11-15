@@ -10,6 +10,7 @@ export interface ICulturalPlaceRepository {
   findAll(query?: CulturalPlaceQueryDto): Promise<CulturalPlace[]>;
   findById(id: string): Promise<CulturalPlace | null>;
   findByName(name: string): Promise<CulturalPlace | null>;
+  findByCoordinates(latitude: number, longitude: number, radiusInMeters?: number): Promise<CulturalPlace | null>;
   update(id: string, data: UpdateCulturalPlaceDto): Promise<CulturalPlace | null>;
   delete(id: string): Promise<boolean>;
   findByCategory(category: string): Promise<CulturalPlace[]>;

@@ -69,6 +69,26 @@ export class MongoDBCulturalPlaceRepository implements ICulturalPlaceRepository 
     return await this.culturalPlaceModel.findOne({ name }).exec();
   }
 
+  async findByCoordinates(
+    latitude: number,
+    longitude: number,
+    radiusInMeters: number = 5,
+  ): Promise<CulturalPlace | null> {
+    return await this.culturalPlaceModel
+      .findOne({
+        'contact.coordinates': {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+            $maxDistance: radiusInMeters,
+          },
+        },
+      })
+      .exec();
+  }
+
   async update(id: string, data: UpdateCulturalPlaceDto): Promise<CulturalPlace | null> {
     return await this.culturalPlaceModel
       .findByIdAndUpdate(id, { $set: data }, { new: true })

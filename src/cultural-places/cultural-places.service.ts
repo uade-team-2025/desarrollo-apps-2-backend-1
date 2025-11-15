@@ -3,6 +3,11 @@ import { CULTURAL_PLACE_REPOSITORY } from './interfaces/cultural-place.repositor
 import type { ICulturalPlaceRepository } from './interfaces/cultural-place.repository.interface';
 import { CreateCulturalPlaceDto } from './dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from './dto/update-cultural-place.dto';
+import {
+  CancelCulturalPlaceByLocationDto,
+  CulturalPlaceClosureStatus,
+} from './dto/cancel-cultural-place-by-location.dto';
+import { ActivateCulturalPlaceByLocationDto } from './dto/activate-cultural-place-by-location.dto';
 import { CulturalPlaceQueryDto } from './interfaces/cultural-place.interface';
 import { CulturalPlace } from './schemas/cultural-place.schema';
 import { CoordinatesValidator } from './validators/coordinates.validator';
@@ -149,7 +154,59 @@ export class CulturalPlacesService {
 
   async findTopRated(limit: number = 10): Promise<CulturalPlace[]> {
     const places = await this.culturalPlaceRepository.findTopRated(limit);
-    return places.map(place => CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place));
+    return places.map(place =>
+      CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place),
+    );
   }
 
+  async cancelByLocation({
+    latitude,
+    longitude,
+    status,
+  }: CancelCulturalPlaceByLocationDto): Promise<CulturalPlace> {
+    const normalizedStatus = status.toUpperCase() as CulturalPlaceClosureStatus;
+
+    const place = await this.culturalPlaceRepository.findByCoordinates(latitude, longitude);
+
+    if (!place) {
+      throw new NotFoundException('Cultural place not found for provided coordinates');
+    }
+
+    const updatedPlace = await this.culturalPlaceRepository.update(place._id.toString(), {
+      status: normalizedStatus,
+      isActive: false,
+    } as any);
+
+    if (!updatedPlace) {
+      throw new NotFoundException('Error updating cultural place status');
+    }
+
+    return CoordinatesTransformer.fromGeoJSON(
+      (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+    );
+  }
+
+  async activateByLocation({
+    latitude,
+    longitude,
+  }: ActivateCulturalPlaceByLocationDto): Promise<CulturalPlace> {
+    const place = await this.culturalPlaceRepository.findByCoordinates(latitude, longitude);
+
+    if (!place) {
+      throw new NotFoundException('Cultural place not found for provided coordinates');
+    }
+
+    const updatedPlace = await this.culturalPlaceRepository.update(place._id.toString(), {
+      status: 'ACTIVE',
+      isActive: true,
+    } as any);
+
+    if (!updatedPlace) {
+      throw new NotFoundException('Error updating cultural place status');
+    }
+
+    return CoordinatesTransformer.fromGeoJSON(
+      (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+    );
+  }
 }

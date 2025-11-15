@@ -17,6 +17,8 @@ import { CulturalPlacesService } from './cultural-places.service';
 import { CreateCulturalPlaceDto } from './dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from './dto/update-cultural-place.dto';
 import type { CulturalPlaceQueryDto } from './interfaces/cultural-place.interface';
+import { CancelCulturalPlaceByLocationDto } from './dto/cancel-cultural-place-by-location.dto';
+import { ActivateCulturalPlaceByLocationDto } from './dto/activate-cultural-place-by-location.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('cultural-places')
@@ -130,5 +132,21 @@ export class CulturalPlacesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.culturalPlacesService.remove(id);
+  }
+
+  @Post('cancel-by-location')
+  @ApiOperation({ summary: 'Cancel a cultural place using coordinates' })
+  @ApiResponse({ status: 200, description: 'Cultural place cancelled successfully' })
+  @ApiResponse({ status: 404, description: 'Cultural place not found' })
+  async cancelByLocation(@Body() payload: CancelCulturalPlaceByLocationDto) {
+    return this.culturalPlacesService.cancelByLocation(payload);
+  }
+
+  @Post('activate-by-location')
+  @ApiOperation({ summary: 'Activate a cultural place using coordinates' })
+  @ApiResponse({ status: 200, description: 'Cultural place activated successfully' })
+  @ApiResponse({ status: 404, description: 'Cultural place not found' })
+  async activateByLocation(@Body() payload: ActivateCulturalPlaceByLocationDto) {
+    return this.culturalPlacesService.activateByLocation(payload);
   }
 }
