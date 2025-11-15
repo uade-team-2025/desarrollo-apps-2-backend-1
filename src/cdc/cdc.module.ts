@@ -14,6 +14,7 @@ import {
 } from './event-change.listener';
 import { CulturalPlaceActivationHandler } from './handlers/cultural-place-activation.handler';
 import { CulturalPlaceClausureHandler } from './handlers/cultural-place-clausure.handler';
+import { CulturalPlaceTemporalClausureHandler } from './handlers/cultural-place-temporal-clausure.handler';
 import { EventEmailNotificationHandler } from './handlers/event-email-notification.handler';
 import { CulturalPlaceChangeHandler } from './interfaces/cultural-place-change-handler.interface';
 import { EventChangeHandler } from './interfaces/event-change-handler.interface';
@@ -47,6 +48,7 @@ import { TruckRecord, TruckSchema } from './schemas/truck.schema';
     ChangeStreamsListenerService,
     CulturalPlaceChangeListenerService,
     CulturalPlaceClausureHandler,
+    CulturalPlaceTemporalClausureHandler,
     CulturalPlaceActivationHandler,
     EventChangeListenerService,
     EventEmailNotificationHandler,
@@ -58,7 +60,7 @@ import { TruckRecord, TruckSchema } from './schemas/truck.schema';
     {
       provide: CULTURAL_PLACE_CHANGE_HANDLERS,
       useFactory: (...handlers: CulturalPlaceChangeHandler[]) => handlers,
-      inject: [CulturalPlaceClausureHandler, CulturalPlaceActivationHandler],
+      inject: [CulturalPlaceClausureHandler, CulturalPlaceTemporalClausureHandler, CulturalPlaceActivationHandler],
     },
     {
       provide: EVENT_CHANGE_HANDLERS,

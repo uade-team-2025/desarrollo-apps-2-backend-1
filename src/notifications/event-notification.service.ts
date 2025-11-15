@@ -77,6 +77,8 @@ export class EventNotificationService {
     switch (normalizedStatus) {
       case 'PAUSED_BY_CLOSURE':
         return 'El evento fue cancelado porque el espacio cultural fue clausurado.';
+      case 'TEMPORAL_PAUSED':
+        return 'El evento fue pospuesto temporalmente.';
       case 'CANCELLED_BY_CLIMATE':
         return 'El evento fue cancelado debido a una emergencia climática.';
       case 'CANCELLED_BY_ORGANIZER':

@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CulturalPlaceClausureHandler } from '../handlers/cultural-place-clausure.handler';
+import { CulturalPlaceTemporalClausureHandler } from '../handlers/cultural-place-temporal-clausure.handler';
 import { EVENT_REPOSITORY } from '../../events/interfaces/event.repository.token';
 
-describe('CulturalPlaceClausureHandler', () => {
-  let handler: CulturalPlaceClausureHandler;
+describe('CulturalPlaceTemporalClausureHandler', () => {
+  let handler: CulturalPlaceTemporalClausureHandler;
   const repositoryMock = {
     updateManyByCulturalPlace: jest.fn(),
   };
@@ -11,7 +11,7 @@ describe('CulturalPlaceClausureHandler', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CulturalPlaceClausureHandler,
+        CulturalPlaceTemporalClausureHandler,
         {
           provide: EVENT_REPOSITORY,
           useValue: repositoryMock,
@@ -19,19 +19,18 @@ describe('CulturalPlaceClausureHandler', () => {
       ],
     }).compile();
 
-    handler = module.get<CulturalPlaceClausureHandler>(CulturalPlaceClausureHandler);
+    handler = module.get<CulturalPlaceTemporalClausureHandler>(CulturalPlaceTemporalClausureHandler);
     jest.clearAllMocks();
   });
 
   describe('canHandle', () => {
-    it('returns true when status is CLOSED_DOWN', () => {
+    it('returns true when status is TEMPORAL_CLOSED_DOWN', () => {
       expect(
         handler.canHandle({
           collection: 'culturalplaces',
           eventType: 'UPDATE',
           documentId: 'id',
-          data: { status: 'ACTIVE' },
-          updatedFields: { status: 'CLOSED_DOWN' },
+          updatedFields: { status: 'TEMPORAL_CLOSED_DOWN' },
         }),
       ).toBe(true);
     });
@@ -42,12 +41,12 @@ describe('CulturalPlaceClausureHandler', () => {
           collection: 'events',
           eventType: 'UPDATE',
           documentId: 'id',
-          updatedFields: { status: 'CLOSED_DOWN' },
+          updatedFields: { status: 'TEMPORAL_CLOSED_DOWN' },
         }),
       ).toBe(false);
     });
 
-    it('returns false when status is not clausurado', () => {
+    it('returns false when status is different', () => {
       expect(
         handler.canHandle({
           collection: 'culturalplaces',
@@ -60,30 +59,35 @@ describe('CulturalPlaceClausureHandler', () => {
   });
 
   describe('handle', () => {
-    it('pauses events when clausurado', async () => {
-      repositoryMock.updateManyByCulturalPlace.mockResolvedValue(2);
+    it('pauses only today events', async () => {
+      repositoryMock.updateManyByCulturalPlace.mockResolvedValue(1);
+      const fakeNow = new Date('2025-01-15T12:00:00.000Z');
+      jest.useFakeTimers().setSystemTime(fakeNow);
 
       await handler.handle({
         collection: 'culturalplaces',
         eventType: 'UPDATE',
         documentId: '507f1f77bcf86cd799439011',
         data: { _id: '507f1f77bcf86cd799439011', status: 'ACTIVE' },
-        updatedFields: { status: 'CLOSED_DOWN' },
+        updatedFields: { status: 'TEMPORAL_CLOSED_DOWN' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         {
-          status: 'PAUSED_BY_CLOSURE',
+          status: 'TEMPORAL_PAUSED',
           isActive: false,
         },
-        {
-          $or: [
-            { status: { $ne: 'PAUSED_BY_CLOSURE' } },
-            { isActive: { $ne: false } },
-          ],
-        },
+        expect.objectContaining({
+          date: {
+            $gte: expect.any(Date),
+            $lte: expect.any(Date),
+          },
+          isActive: true,
+        }),
       );
+
+      jest.useRealTimers();
     });
 
     it('ignores message without ID', async () => {
@@ -91,7 +95,7 @@ describe('CulturalPlaceClausureHandler', () => {
         collection: 'culturalplaces',
         eventType: 'UPDATE',
         documentId: '',
-        updatedFields: { status: 'CLOSED_DOWN' },
+        updatedFields: { status: 'TEMPORAL_CLOSED_DOWN' },
       });
 
       expect(repositoryMock.updateManyByCulturalPlace).not.toHaveBeenCalled();

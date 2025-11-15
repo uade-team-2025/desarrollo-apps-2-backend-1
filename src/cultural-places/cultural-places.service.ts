@@ -3,6 +3,13 @@ import { CULTURAL_PLACE_REPOSITORY } from './interfaces/cultural-place.repositor
 import type { ICulturalPlaceRepository } from './interfaces/cultural-place.repository.interface';
 import { CreateCulturalPlaceDto } from './dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from './dto/update-cultural-place.dto';
+import {
+  CancelCulturalPlaceByLocationDto,
+  CulturalPlaceClosureStatus,
+} from './dto/cancel-cultural-place-by-location.dto';
+import { CancelCulturalPlacesByRangeDto } from './dto/cancel-cultural-places-by-range.dto';
+import { ActivateCulturalPlaceByLocationDto } from './dto/activate-cultural-place-by-location.dto';
+import { ActivateCulturalPlacesByRangeDto } from './dto/activate-cultural-places-by-range.dto';
 import { CulturalPlaceQueryDto } from './interfaces/cultural-place.interface';
 import { CulturalPlace } from './schemas/cultural-place.schema';
 import { CoordinatesValidator } from './validators/coordinates.validator';
@@ -16,6 +23,17 @@ export class CulturalPlacesService {
     @Inject(CULTURAL_PLACE_REPOSITORY)
     private readonly culturalPlaceRepository: ICulturalPlaceRepository,
   ) {}
+
+  private resolvePlaceId(place: CulturalPlace): string {
+    const anyPlace = place as any;
+    if (anyPlace?._id) {
+      return typeof anyPlace._id === 'string' ? anyPlace._id : anyPlace._id.toString();
+    }
+    if (anyPlace?.id) {
+      return anyPlace.id;
+    }
+    throw new NotFoundException('Cultural place identifier not found');
+  }
 
   async create(createCulturalPlaceDto: CreateCulturalPlaceDto): Promise<CulturalPlace> {
     try {
@@ -149,7 +167,151 @@ export class CulturalPlacesService {
 
   async findTopRated(limit: number = 10): Promise<CulturalPlace[]> {
     const places = await this.culturalPlaceRepository.findTopRated(limit);
-    return places.map(place => CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place));
+    return places.map(place =>
+      CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place),
+    );
   }
 
+  async cancelByLocation({
+    latitude,
+    longitude,
+    status,
+  }: CancelCulturalPlaceByLocationDto): Promise<CulturalPlace> {
+    const normalizedStatus = status.toUpperCase() as CulturalPlaceClosureStatus;
+
+    const place = await this.culturalPlaceRepository.findByCoordinates(latitude, longitude);
+
+    if (!place) {
+      throw new NotFoundException('Cultural place not found for provided coordinates');
+    }
+
+    const placeId = this.resolvePlaceId(place);
+
+    const updatedPlace = await this.culturalPlaceRepository.update(placeId, {
+      status: normalizedStatus,
+      isActive: false,
+    } as any);
+
+    if (!updatedPlace) {
+      throw new NotFoundException('Error updating cultural place status');
+    }
+
+    return CoordinatesTransformer.fromGeoJSON(
+      (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+    );
+  }
+
+  async activateByLocation({
+    latitude,
+    longitude,
+  }: ActivateCulturalPlaceByLocationDto): Promise<CulturalPlace> {
+    const place = await this.culturalPlaceRepository.findByCoordinates(latitude, longitude);
+
+    if (!place) {
+      throw new NotFoundException('Cultural place not found for provided coordinates');
+    }
+
+    const placeId = this.resolvePlaceId(place);
+
+    const updatedPlace = await this.culturalPlaceRepository.update(placeId, {
+      status: 'ACTIVE',
+      isActive: true,
+    } as any);
+
+    if (!updatedPlace) {
+      throw new NotFoundException('Error updating cultural place status');
+    }
+
+    return CoordinatesTransformer.fromGeoJSON(
+      (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+    );
+  }
+
+  async cancelByRange({
+    latitude,
+    longitude,
+    radiusInMeters,
+    status,
+  }: CancelCulturalPlacesByRangeDto): Promise<CulturalPlace[]> {
+    if (!radiusInMeters || radiusInMeters <= 0) {
+      throw new BadRequestException('radiusInMeters must be greater than zero');
+    }
+
+    const normalizedStatus = status.toUpperCase() as CulturalPlaceClosureStatus;
+    const radiusInKilometers = radiusInMeters / 1000;
+
+    const placesInRange = await this.culturalPlaceRepository.findAll({
+      lat: latitude,
+      lng: longitude,
+      radius: radiusInKilometers,
+      isActive: true,
+    });
+
+    if (!placesInRange.length) {
+      throw new NotFoundException('No cultural places found within the provided range');
+    }
+
+    const updatedPlaces = await Promise.all(
+      placesInRange.map(async place => {
+        const placeId = this.resolvePlaceId(place);
+        return this.culturalPlaceRepository.update(placeId, {
+          status: normalizedStatus,
+          isActive: false,
+        } as any);
+      }),
+    );
+
+    if (updatedPlaces.some(updated => !updated)) {
+      throw new NotFoundException('Error updating cultural places status');
+    }
+
+    return updatedPlaces.map(updatedPlace =>
+      CoordinatesTransformer.fromGeoJSON(
+        (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+      ),
+    );
+  }
+
+  async activateByRange({
+    latitude,
+    longitude,
+    radiusInMeters,
+  }: ActivateCulturalPlacesByRangeDto): Promise<CulturalPlace[]> {
+    if (!radiusInMeters || radiusInMeters <= 0) {
+      throw new BadRequestException('radiusInMeters must be greater than zero');
+    }
+
+    const radiusInKilometers = radiusInMeters / 1000;
+
+    const placesInRange = await this.culturalPlaceRepository.findAll({
+      lat: latitude,
+      lng: longitude,
+      radius: radiusInKilometers,
+      isActive: false,
+    });
+
+    if (!placesInRange.length) {
+      throw new NotFoundException('No cultural places found within the provided range');
+    }
+
+    const updatedPlaces = await Promise.all(
+      placesInRange.map(async place => {
+        const placeId = this.resolvePlaceId(place);
+        return this.culturalPlaceRepository.update(placeId, {
+          status: 'ACTIVE',
+          isActive: true,
+        } as any);
+      }),
+    );
+
+    if (updatedPlaces.some(updated => !updated)) {
+      throw new NotFoundException('Error updating cultural places status');
+    }
+
+    return updatedPlaces.map(updatedPlace =>
+      CoordinatesTransformer.fromGeoJSON(
+        (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+      ),
+    );
+  }
 }

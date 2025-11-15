@@ -5,8 +5,8 @@ import { EVENT_REPOSITORY } from '../../events/interfaces/event.repository.token
 import type { EventRepository } from '../../events/interfaces/event.repository.interface';
 
 @Injectable()
-export class CulturalPlaceClausureHandler implements CulturalPlaceChangeHandler {
-  private readonly logger = new Logger(CulturalPlaceClausureHandler.name);
+export class CulturalPlaceTemporalClausureHandler implements CulturalPlaceChangeHandler {
+  private readonly logger = new Logger(CulturalPlaceTemporalClausureHandler.name);
 
   constructor(
     @Inject(EVENT_REPOSITORY)
@@ -23,34 +23,46 @@ export class CulturalPlaceClausureHandler implements CulturalPlaceChangeHandler 
       return false;
     }
 
-    return status.toUpperCase() === 'CLOSED_DOWN';
+    return status.toUpperCase() === 'TEMPORAL_CLOSED_DOWN';
   }
 
   async handle(message: CulturalPlaceChangeMessage): Promise<void> {
     const culturalPlaceId = message.data?._id || message.documentId;
 
     if (!culturalPlaceId) {
-      this.logger.warn('Closed-down message without cultural place ID. Skipping.');
+      this.logger.warn('Temporary closure message without cultural place ID. Skipping.');
       return;
     }
 
-    this.logger.log(`Cultural place ${culturalPlaceId} closed down. Pausing related events.`);
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    this.logger.log(
+      `Cultural place ${culturalPlaceId} temporarily closed. Pausing today's events between ${startOfDay.toISOString()} and ${endOfDay.toISOString()}.`,
+    );
 
     const modifiedCount = await this.eventRepository.updateManyByCulturalPlace(
       culturalPlaceId,
       {
-        status: 'PAUSED_BY_CLOSURE',
+        status: 'TEMPORAL_PAUSED',
         isActive: false,
       },
       {
-        $or: [
-          { status: { $ne: 'PAUSED_BY_CLOSURE' } },
-          { isActive: { $ne: false } },
-        ],
+        date: {
+          $gte: startOfDay,
+          $lte: endOfDay,
+        },
+        isActive: true,
       },
     );
 
-    this.logger.log(`Events paused by closure for cultural place ${culturalPlaceId}: ${modifiedCount}`);
+    this.logger.log(
+      `Events temporarily paused for cultural place ${culturalPlaceId} (today only): ${modifiedCount}`,
+    );
   }
 }
+
 

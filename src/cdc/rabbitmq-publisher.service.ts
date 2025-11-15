@@ -34,20 +34,23 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       await this.channel.assertExchange(exchange, 'topic', { durable: true });
 
       const queuesAndRoutingKeys = [
-        { queue: 'cultura.evento.crear', routingKey: 'cultura.evento.crear' },
+        { queue: 'cultura.events.crear', routingKey: 'cultura.events.crear' },
         {
-          queue: 'cultura.evento.modificar',
-          routingKey: 'cultura.evento.modificar',
+          queue: 'cultura.events.modificar',
+          routingKey: 'cultura.events.modificar',
         },
-        { queue: 'cultura.espacio.crear', routingKey: 'cultura.espacio.crear' },
         {
-          queue: 'cultura.espacio.modificar',
-          routingKey: 'cultura.espacio.modificar',
+          queue: 'cultura.culturalplaces.crear',
+          routingKey: 'cultura.culturalplaces.crear',
         },
-        { queue: 'cultura.ticket.crear', routingKey: 'cultura.ticket.crear' },
         {
-          queue: 'cultura.ticket.modificar',
-          routingKey: 'cultura.ticket.modificar',
+          queue: 'cultura.culturalplaces.modificar',
+          routingKey: 'cultura.culturalplaces.modificar',
+        },
+        { queue: 'cultura.tickets.crear', routingKey: 'cultura.tickets.crear' },
+        {
+          queue: 'cultura.tickets.modificar',
+          routingKey: 'cultura.tickets.modificar',
         },
         {
           queue: 'movilidad.estaciones.festivalverde',
@@ -105,6 +108,10 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       const routingKey = `cultura.${collection}.${operation}`;
       const message = JSON.stringify(event);
 
+      this.logger.debug(
+        `Payload a publicar (${routingKey}): ${message}`,
+      );
+
       this.channel.publish(exchange, routingKey, Buffer.from(message), {
         persistent: true,
       });
@@ -129,6 +136,10 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       const exchange = 'citypass_def';
       const routingKey = 'movilidad.estaciones.festivalverde';
       const payload = JSON.stringify(message);
+
+      this.logger.debug(
+        `Payload de movilidad a publicar (${routingKey}): ${payload}`,
+      );
 
       this.channel.publish(exchange, routingKey, Buffer.from(payload), {
         persistent: true,
