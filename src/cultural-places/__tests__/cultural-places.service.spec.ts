@@ -6,6 +6,7 @@ import {
   CancelCulturalPlaceByLocationDto,
   CulturalPlaceClosureStatus,
 } from '../dto/cancel-cultural-place-by-location.dto';
+import { CancelCulturalPlacesByRangeDto } from '../dto/cancel-cultural-places-by-range.dto';
 import { ActivateCulturalPlaceByLocationDto } from '../dto/activate-cultural-place-by-location.dto';
 import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 
@@ -140,9 +141,9 @@ describe('CulturalPlacesService', () => {
         schedules: mockCulturalPlace.schedules,
         contact: {
           ...mockCulturalPlace.contact,
-          coordinates: { 
-            type: 'Point',
-            coordinates: [0, 100] // Invalid latitude [lng, lat]
+          coordinates: {
+            lat: 100, // Invalid latitude
+            lng: 200, // Invalid longitude
           },
         },
         image: 'https://example.com/image.jpg',
@@ -232,12 +233,12 @@ describe('CulturalPlacesService', () => {
     it('should validate coordinates if provided', async () => {
       const updateDto = {
         contact: {
-          coordinates: { 
-            type: 'Point',
-            coordinates: [0, 100] // Invalid latitude [lng, lat]
+          coordinates: {
+            lat: 100,
+            lng: 200,
           },
         },
-      };
+      } as any;
 
       mockRepository.findById.mockResolvedValue(mockCulturalPlace);
 
@@ -335,6 +336,56 @@ describe('CulturalPlacesService', () => {
       mockRepository.update.mockResolvedValue(null);
 
       await expect(service.cancelByLocation(payload)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('cancelByRange', () => {
+    const payload: CancelCulturalPlacesByRangeDto = {
+      latitude: -34.6037,
+      longitude: -58.3816,
+      radiusInMeters: 500,
+      status: CulturalPlaceClosureStatus.TEMPORAL_CLOSED_DOWN,
+    };
+
+    it('should cancel all cultural places within range', async () => {
+      const updatedPlace = { ...mockCulturalPlace, status: 'TEMPORAL_CLOSED_DOWN', isActive: false };
+      mockRepository.findAll.mockResolvedValue([mockCulturalPlace]);
+      mockRepository.update.mockResolvedValue(updatedPlace);
+
+      const result = await service.cancelByRange(payload);
+
+      expect(mockRepository.findAll).toHaveBeenCalledWith({
+        lat: payload.latitude,
+        lng: payload.longitude,
+        radius: payload.radiusInMeters / 1000,
+        isActive: true,
+      });
+      expect(mockRepository.update).toHaveBeenCalledWith(mockCulturalPlace._id, {
+        status: CulturalPlaceClosureStatus.TEMPORAL_CLOSED_DOWN,
+        isActive: false,
+      });
+      expect(result).toEqual([updatedPlace]);
+    });
+
+    it('should throw BadRequestException for invalid radius', async () => {
+      await expect(
+        service.cancelByRange({ ...payload, radiusInMeters: 0 }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepository.findAll).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when no places found', async () => {
+      mockRepository.findAll.mockResolvedValue([]);
+
+      await expect(service.cancelByRange(payload)).rejects.toThrow(NotFoundException);
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when any update fails', async () => {
+      mockRepository.findAll.mockResolvedValue([mockCulturalPlace]);
+      mockRepository.update.mockResolvedValue(null);
+
+      await expect(service.cancelByRange(payload)).rejects.toThrow(NotFoundException);
     });
   });
 

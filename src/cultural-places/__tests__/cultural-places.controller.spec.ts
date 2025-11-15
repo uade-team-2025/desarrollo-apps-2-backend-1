@@ -7,6 +7,7 @@ import {
   CancelCulturalPlaceByLocationDto,
   CulturalPlaceClosureStatus,
 } from '../dto/cancel-cultural-place-by-location.dto';
+import { CancelCulturalPlacesByRangeDto } from '../dto/cancel-cultural-places-by-range.dto';
 import { ActivateCulturalPlaceByLocationDto } from '../dto/activate-cultural-place-by-location.dto';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
@@ -53,6 +54,7 @@ describe('CulturalPlacesController', () => {
     findOpenPlaces: jest.fn(),
     findTopRated: jest.fn(),
     cancelByLocation: jest.fn(),
+    cancelByRange: jest.fn(),
     activateByLocation: jest.fn(),
   };
 
@@ -237,6 +239,26 @@ describe('CulturalPlacesController', () => {
 
       expect(result.status).toBe(CulturalPlaceClosureStatus.CLOSED_DOWN);
       expect(service.cancelByLocation).toHaveBeenCalledWith(payload);
+    });
+  });
+
+  describe('cancelByRange', () => {
+    it('should cancel cultural places within range', async () => {
+      const payload: CancelCulturalPlacesByRangeDto = {
+        latitude: -34.6037,
+        longitude: -58.3816,
+        radiusInMeters: 500,
+        status: CulturalPlaceClosureStatus.TEMPORAL_CLOSED_DOWN,
+      };
+      const cancelledPlaces = [
+        { ...mockCulturalPlace, status: CulturalPlaceClosureStatus.TEMPORAL_CLOSED_DOWN, isActive: false },
+      ];
+      mockService.cancelByRange.mockResolvedValue(cancelledPlaces);
+
+      const result = await controller.cancelByRange(payload);
+
+      expect(result).toEqual(cancelledPlaces);
+      expect(service.cancelByRange).toHaveBeenCalledWith(payload);
     });
   });
 

@@ -7,6 +7,7 @@ import {
   CancelCulturalPlaceByLocationDto,
   CulturalPlaceClosureStatus,
 } from './dto/cancel-cultural-place-by-location.dto';
+import { CancelCulturalPlacesByRangeDto } from './dto/cancel-cultural-places-by-range.dto';
 import { ActivateCulturalPlaceByLocationDto } from './dto/activate-cultural-place-by-location.dto';
 import { CulturalPlaceQueryDto } from './interfaces/cultural-place.interface';
 import { CulturalPlace } from './schemas/cultural-place.schema';
@@ -222,6 +223,51 @@ export class CulturalPlacesService {
 
     return CoordinatesTransformer.fromGeoJSON(
       (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+    );
+  }
+
+  async cancelByRange({
+    latitude,
+    longitude,
+    radiusInMeters,
+    status,
+  }: CancelCulturalPlacesByRangeDto): Promise<CulturalPlace[]> {
+    if (!radiusInMeters || radiusInMeters <= 0) {
+      throw new BadRequestException('radiusInMeters must be greater than zero');
+    }
+
+    const normalizedStatus = status.toUpperCase() as CulturalPlaceClosureStatus;
+    const radiusInKilometers = radiusInMeters / 1000;
+
+    const placesInRange = await this.culturalPlaceRepository.findAll({
+      lat: latitude,
+      lng: longitude,
+      radius: radiusInKilometers,
+      isActive: true,
+    });
+
+    if (!placesInRange.length) {
+      throw new NotFoundException('No cultural places found within the provided range');
+    }
+
+    const updatedPlaces = await Promise.all(
+      placesInRange.map(async place => {
+        const placeId = this.resolvePlaceId(place);
+        return this.culturalPlaceRepository.update(placeId, {
+          status: normalizedStatus,
+          isActive: false,
+        } as any);
+      }),
+    );
+
+    if (updatedPlaces.some(updated => !updated)) {
+      throw new NotFoundException('Error updating cultural places status');
+    }
+
+    return updatedPlaces.map(updatedPlace =>
+      CoordinatesTransformer.fromGeoJSON(
+        (updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace,
+      ),
     );
   }
 }
