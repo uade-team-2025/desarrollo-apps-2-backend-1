@@ -54,6 +54,4 @@ curl -X POST https://<host>/cultural-places/cancel-by-range \
    - `TEMPORAL_CLOSED_DOWN`: solo se cancelan los eventos del día en curso.
    - `ACTIVE`: los eventos se reactivan normalmente.
 
-Este README debería ayudarte a identificar rápidamente qué endpoint usar y qué efecto tendrá sobre los centros culturales.
-
 
