@@ -5,20 +5,44 @@ export type TruckDocument = TruckRecord & Document;
 
 @Schema({ timestamps: true, collection: 'trucks' })
 export class TruckRecord {
-  @Prop({ required: true })
-  eventId: string;
+  @Prop({ required: true, unique: true })
+  id_ruta: string;
 
   @Prop({ required: true })
-  truckId: string;
+  indice_punto_actual: number;
 
   @Prop({ required: true })
-  lat: number;
+  total_puntos: number;
+
+  @Prop({
+    type: {
+      latitud: { type: Number, required: true },
+      longitud: { type: Number, required: true },
+    },
+    required: true,
+  })
+  punto_actual: {
+    latitud: number;
+    longitud: number;
+  };
 
   @Prop({ required: true })
-  long: number;
+  porcentaje_progreso: number;
+
+  @Prop({
+    type: [
+      {
+        id_evento: { type: String, required: true },
+      },
+    ],
+    required: true,
+  })
+  informacion_adicional: Array<{
+    id_evento: string;
+  }>;
 }
 
 export const TruckSchema = SchemaFactory.createForClass(TruckRecord);
-TruckSchema.index({ eventId: 1 });
-TruckSchema.index({ truckId: 1 });
+TruckSchema.index({ id_ruta: 1 }, { unique: true });
 TruckSchema.index({ createdAt: -1 });
+TruckSchema.index({ 'informacion_adicional.id_evento': 1 });

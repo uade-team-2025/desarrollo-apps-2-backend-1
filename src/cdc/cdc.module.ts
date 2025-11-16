@@ -19,12 +19,10 @@ import { EventEmailNotificationHandler } from './handlers/event-email-notificati
 import { CulturalPlaceChangeHandler } from './interfaces/cultural-place-change-handler.interface';
 import { EventChangeHandler } from './interfaces/event-change-handler.interface';
 import { MobilityStationsController } from './mobility-stations.controller';
-import { MobilityStationsListenerService } from './mobility-stations.listener';
 import { MobilityStationsService } from './mobility-stations.service';
 import { RabbitMqPublisherService } from './rabbitmq-publisher.service';
 import { MobilityStationRepository } from './repositories/mobility-station.repository';
 import { TruckRepository } from './repositories/truck.repository';
-import { ResiduosTruckListenerService } from './residuos-truck.listener';
 import { ResiduosTrucksController } from './residuos-trucks.controller';
 import {
   MobilityStationRecord,
@@ -53,14 +51,16 @@ import { TruckRecord, TruckSchema } from './schemas/truck.schema';
     EventChangeListenerService,
     EventEmailNotificationHandler,
     MobilityStationsService,
-    MobilityStationsListenerService,
     MobilityStationRepository,
-    ResiduosTruckListenerService,
     TruckRepository,
     {
       provide: CULTURAL_PLACE_CHANGE_HANDLERS,
       useFactory: (...handlers: CulturalPlaceChangeHandler[]) => handlers,
-      inject: [CulturalPlaceClausureHandler, CulturalPlaceTemporalClausureHandler, CulturalPlaceActivationHandler],
+      inject: [
+        CulturalPlaceClausureHandler,
+        CulturalPlaceTemporalClausureHandler,
+        CulturalPlaceActivationHandler,
+      ],
     },
     {
       provide: EVENT_CHANGE_HANDLERS,
@@ -74,7 +74,6 @@ import { TruckRecord, TruckSchema } from './schemas/truck.schema';
     EventChangeListenerService,
     MobilityStationsService,
     MobilityStationRepository,
-    ResiduosTruckListenerService,
     TruckRepository,
   ],
 })

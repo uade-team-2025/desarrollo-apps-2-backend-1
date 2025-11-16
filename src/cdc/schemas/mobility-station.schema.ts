@@ -9,27 +9,40 @@ export class MobilityStationRecord {
   eventId: string;
 
   @Prop({ required: true })
-  stationId: string;
+  name: string;
+
+  @Prop({
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: true,
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
+  })
+  location: {
+    type: string;
+    coordinates: [number, number]; // [lng, lat]
+  };
 
   @Prop({ required: true })
-  lt: number; // latitude
+  capacity: number;
 
   @Prop({ required: true })
-  lg: number; // longitude
+  bikesCount: number;
 
   @Prop({ required: true })
-  count: number;
-
-  @Prop({ default: 'bulk' })
-  mode: 'bulk' | 'update';
-
-  @Prop()
-  sentAt?: Date;
+  status: string;
 }
 
 export const MobilityStationSchema = SchemaFactory.createForClass(
   MobilityStationRecord,
 );
+
+// Índice geoespacial para búsquedas por ubicación
+MobilityStationSchema.index({ location: '2dsphere' });
 MobilityStationSchema.index({ eventId: 1 });
-MobilityStationSchema.index({ stationId: 1 });
+MobilityStationSchema.index({ name: 1 });
 MobilityStationSchema.index({ createdAt: -1 });

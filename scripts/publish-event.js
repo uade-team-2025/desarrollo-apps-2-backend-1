@@ -3,36 +3,67 @@ const amqp = require('amqplib');
 
 const url = 'amqp://admin:admin@cultura-rabbit.diaznicolasandres.com:5672';
 const exchange = 'citypass_def';
-const routingKey = 'movilidad.estaciones.festivalverde';
+const routingKey = 'cultura.events.crear';
 
+// Mock de un evento creado (basado en el log del backend)
 const message = {
-  eventId: '68d44d2663d135b1b22cb970',
-  stations: [
-    { stationId: 'station-1', lt: -34.6095, lg: -58.379, count: 8 },
-    { stationId: 'station-2', lt: -34.611, lg: -58.3815, count: 15 },
-    { stationId: 'station-3', lt: -34.608, lg: -58.382, count: 4 },
-    { stationId: 'station-4', lt: -34.612, lg: -58.3785, count: 7 },
-    { stationId: 'station-5', lt: -34.6105, lg: -58.3795, count: 10 },
-    { stationId: 'station-6', lt: -34.6078, lg: -58.3805, count: 12 },
-    { stationId: 'station-7', lt: -34.613, lg: -58.3825, count: 6 },
-    { stationId: 'station-8', lt: -34.609, lg: -58.383, count: 9 },
-    { stationId: 'station-9', lt: -34.6115, lg: -58.3775, count: 5 },
-    { stationId: 'station-10', lt: -34.6085, lg: -58.378, count: 11 },
-    { stationId: 'station-11', lt: -34.6125, lg: -58.38, count: 14 },
-    { stationId: 'station-12', lt: -34.61, lg: -58.384, count: 10 },
-    { stationId: 'station-13', lt: -34.6075, lg: -58.381, count: 8 },
-    { stationId: 'station-14', lt: -34.6135, lg: -58.379, count: 6 },
-    { stationId: 'station-15', lt: -34.6098, lg: -58.377, count: 10 },
-    { stationId: 'station-16', lt: -34.6112, lg: -58.3835, count: 9 },
-    { stationId: 'station-17', lt: -34.6082, lg: -58.3792, count: 5 },
-    { stationId: 'station-18', lt: -34.6128, lg: -58.3812, count: 12 },
-    { stationId: 'station-19', lt: -34.6108, lg: -58.3808, count: 11 },
-    { stationId: 'station-20', lt: -34.6092, lg: -58.3822, count: 7 },
-  ],
-  metadata: {
-    mode: 'bulk',
-    sentAt: new Date().toISOString(),
-    totalStations: 2,
+  eventType: 'INSERT',
+  collection: 'events',
+  documentId: '691a25b3c953e68977ad9354',
+  timestamp: new Date().toISOString(),
+  data: {
+    _id: '691a25b3c953e68977ad9354',
+    culturalPlaceId: {
+      _id: '68d44759b05e86754239e756',
+      name: 'Espacio Aguirre',
+      description:
+        'Espacio Aguirre es un teatro y escuela de clown ubicado en Palermo. Ofrece obras de teatro, talleres de clown y eventos culturales en un espacio no convencional con capacidad para 90 personas.',
+      category: 'Teatro',
+      characteristics: [
+        'Teatro',
+        'Escuela de clown',
+        'Talleres',
+        'Espacio no convencional',
+      ],
+      contact: {
+        coordinates: {
+          type: 'Point',
+          coordinates: [-58.442096, -34.590792],
+        },
+        address: 'Aguirre 1270, Palermo',
+        phone: '48541905',
+        website: 'http://www.espacioaguirre.com.ar',
+        email: 'produccion@espacioaguirre.com.ar',
+        _id: '68d449a55141427b671373db',
+        id: '68d449a55141427b671373db',
+      },
+      image:
+        'https://agendacultural15.com/wp-content/uploads/2022/07/Espacio-Aguirre.jpg',
+      rating: 4,
+      id: '68d44759b05e86754239e756',
+    },
+    name: 'Evento de Prueba',
+    description: 'Descripción del evento de prueba para testing',
+    date: new Date('2025-11-22T04:00:00.000Z'),
+    time: '18:29',
+    ticketTypes: [
+      {
+        type: 'general',
+        price: 1000,
+        initialQuantity: 100,
+        soldQuantity: 0,
+        isActive: true,
+        _id: '691a25b3c953e68977ad9355',
+        id: '691a25b3c953e68977ad9355',
+      },
+    ],
+    isActive: true,
+    status: 'ACTIVE',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    __v: 0,
+    availableQuantity: 100,
+    id: '691a25b3c953e68977ad9354',
   },
 };
 
@@ -46,7 +77,7 @@ async function send() {
     await ch.assertExchange(exchange, 'topic', { durable: true });
 
     // Declarar la cola
-    const queueName = 'movilidad.estaciones.festivalverde';
+    const queueName = 'cultura.events.crear';
     await ch.assertQueue(queueName, { durable: true });
 
     // Hacer binding entre queue y exchange
@@ -59,6 +90,9 @@ async function send() {
     console.log(
       `✓ Message sent to exchange '${exchange}' with routing key '${routingKey}'`,
     );
+    console.log(`  Event ID: ${message.documentId}`);
+    console.log(`  Event Name: ${message.data.name}`);
+    console.log(`  Cultural Place: ${message.data.culturalPlaceId.name}`);
     console.log(JSON.stringify(message, null, 2));
     await ch.close();
     await conn.close();
