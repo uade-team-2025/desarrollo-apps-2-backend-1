@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 const amqp = require('amqplib');
 
-const url = 'amqp://admin:admin@cultura-rabbit.diaznicolasandres.com:5672';
+const url = 'amqp://user_cultura:pass_cultura@3.85.212.112:5672';
 const exchange = 'citypass_def';
-const routingKey = 'residuos.camion.festivalverde';
+const routingKey = 'residuos.camion.posicion';
 
 const message = {
   id_ruta: 'ruta_8_1_abc123',
@@ -25,16 +25,6 @@ async function send() {
     console.log('Connecting to RabbitMQ...');
     const conn = await amqp.connect(url);
     const ch = await conn.createChannel();
-
-    // Declarar exchange
-    await ch.assertExchange(exchange, 'topic', { durable: true });
-
-    // Declarar la cola
-    const queueName = 'residuos.camion.festivalverde';
-    await ch.assertQueue(queueName, { durable: true });
-
-    // Hacer binding entre queue y exchange
-    await ch.bindQueue(queueName, exchange, routingKey);
 
     // Publicar el mensaje
     ch.publish(exchange, routingKey, Buffer.from(JSON.stringify(message)), {
