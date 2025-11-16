@@ -16,31 +16,34 @@ export class TruckRepository {
   async saveTruckMessage(message: TruckMessage): Promise<void> {
     try {
       this.logger.log(
-        `Procesando posición del camión: ${message.truckId} para evento: ${message.eventId}`,
+        `Procesando ruta: ${message.id_ruta} (punto ${message.indice_punto_actual}/${message.total_puntos}, ${message.porcentaje_progreso}%)`,
       );
 
-      await this.model.updateOne(
+      const result = await this.model.updateOne(
         {
-          eventId: message.eventId,
-          truckId: message.truckId,
+          id_ruta: message.id_ruta,
         },
         {
           $set: {
-            eventId: message.eventId,
-            truckId: message.truckId,
-            lat: message.position.lat,
-            long: message.position.long,
+            id_ruta: message.id_ruta,
+            indice_punto_actual: message.indice_punto_actual,
+            total_puntos: message.total_puntos,
+            punto_actual: {
+              latitud: message.punto_actual.latitud,
+              longitud: message.punto_actual.longitud,
+            },
+            porcentaje_progreso: message.porcentaje_progreso,
+            informacion_adicional: message.informacion_adicional,
           },
         },
         { upsert: true },
       );
 
-      this.logger.log(
-        `✓ Posición del camión guardada en BD (evento: ${message.eventId}, camión: ${message.truckId})`,
-      );
+      const action = result.upsertedCount > 0 ? 'creada' : 'actualizada';
+      this.logger.log(`✓ Ruta ${action} en BD (id_ruta: ${message.id_ruta})`);
     } catch (error) {
       this.logger.error(
-        `Error guardando posición del camión en BD: ${error.message}`,
+        `Error guardando ruta en BD: ${error.message}`,
         error.stack,
       );
       throw error;
@@ -50,7 +53,7 @@ export class TruckRepository {
   async getLatestTrucksByEventId(eventId: string): Promise<any[]> {
     try {
       const records = await this.model
-        .find({ eventId })
+        .find({ 'informacion_adicional.id_evento': eventId })
         .sort({ updatedAt: -1 })
         .lean()
         .exec();
@@ -58,26 +61,48 @@ export class TruckRepository {
       return records;
     } catch (error) {
       this.logger.error(
-        `Error obteniendo camiones del evento ${eventId}: ${error.message}`,
+        `Error obteniendo rutas del evento ${eventId}: ${error.message}`,
         error.stack,
       );
       throw error;
     }
   }
 
-  async getLatestTrucks(limit: number = 50): Promise<any[]> {
+  async getLatestTrucks(limit?: number): Promise<any[]> {
     try {
-      const records = await this.model
-        .find()
-        .sort({ updatedAt: -1 })
-        .limit(limit)
-        .lean()
-        .exec();
+      const query = this.model.find().sort({ updatedAt: -1 });
+
+      if (limit && limit > 0) {
+        query.limit(limit);
+      }
+
+      const records = await query.lean().exec();
 
       return records;
     } catch (error) {
       this.logger.error(
         `Error obteniendo últimos camiones: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  async getTruckByIdRuta(idRuta: string): Promise<any> {
+    try {
+      const record = await this.model
+        .findOne({ id_ruta: idRuta })
+        .lean()
+        .exec();
+
+      if (!record) {
+        throw new Error(`No se encontró la ruta con id_ruta: ${idRuta}`);
+      }
+
+      return record;
+    } catch (error) {
+      this.logger.error(
+        `Error obteniendo ruta por id_ruta ${idRuta}: ${error.message}`,
         error.stack,
       );
       throw error;

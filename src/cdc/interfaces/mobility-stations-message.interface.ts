@@ -1,8 +1,17 @@
+export interface MobilityStationLocation {
+  type: string;
+  coordinates: [number, number]; // [lng, lat]
+}
+
 export interface MobilityStation {
-  stationId: string;
-  lt: number;
-  lg: number;
-  count: number;
+  _id?: string;
+  name: string;
+  location: MobilityStationLocation;
+  capacity: number;
+  bikesCount: number;
+  status: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface MobilityStationsMessage {
@@ -14,4 +23,3 @@ export interface MobilityStationsMessage {
     totalStations: number;
   };
 }
-
