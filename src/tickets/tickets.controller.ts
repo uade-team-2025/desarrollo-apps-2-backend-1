@@ -1,39 +1,43 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  Query,
-  HttpStatus,
+  Get,
   HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { TicketsService } from './tickets.service';
-import { PurchaseTicketDto } from './dto/purchase-ticket.dto';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { LdapAuthGuard } from '../auth/guards/ldap-auth.guard';
 import { PurchaseMultipleTicketsDto } from './dto/purchase-multiple-tickets.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TicketsService } from './tickets.service';
 
 @ApiTags('tickets')
 @Controller('tickets')
-@UseGuards(JwtAuthGuard)
+@UseGuards(LdapAuthGuard)
 export class TicketsController {
-  constructor(
-    private readonly ticketsService: TicketsService
-  ) {}
+  constructor(private readonly ticketsService: TicketsService) {}
 
   @Post('purchase')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Purchase multiple tickets for different events and types',
-    description: 'Purchase multiple tickets of different types in a single transaction. Supports general, vip, jubilados, and niños ticket types. Maximum 10 tickets per transaction.'
+    description:
+      'Purchase multiple tickets of different types in a single transaction. Supports general, vip, jubilados, and niños ticket types. Maximum 10 tickets per transaction.',
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Tickets purchased successfully',
     schema: {
       type: 'array',
@@ -49,33 +53,70 @@ export class TicketsController {
           isActive: { type: 'boolean', example: true },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
-          validationURL: { type: 'string', example: 'https://desarrollo-apps-2-frontend.vercel.app/ticket_id/68cf25ed3435733e4a34db91/use' },
-          qrCode: { type: 'string', example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6e...' }
-        }
-      }
-    }
+          validationURL: {
+            type: 'string',
+            example:
+              'https://desarrollo-apps-2-frontend.vercel.app/ticket_id/68cf25ed3435733e4a34db91/use',
+          },
+          qrCode: {
+            type: 'string',
+            example:
+              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6e...',
+          },
+        },
+      },
+    },
   })
-  @ApiResponse({ status: 400, description: 'Bad request - validation error or insufficient tickets' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - validation error or insufficient tickets',
+  })
   @ApiResponse({ status: 404, description: 'Event or user not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async purchaseMultipleTickets(@Body() purchaseMultipleTicketsDto: PurchaseMultipleTicketsDto) {
-    return this.ticketsService.purchaseMultipleTickets(purchaseMultipleTicketsDto);
+  async purchaseMultipleTickets(
+    @Body() purchaseMultipleTicketsDto: PurchaseMultipleTicketsDto,
+  ) {
+    return this.ticketsService.purchaseMultipleTickets(
+      purchaseMultipleTicketsDto,
+    );
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all tickets with optional filtering' })
-  @ApiQuery({ name: 'eventId', required: false, description: 'Filter by event ID' })
-  @ApiQuery({ name: 'userId', required: false, description: 'Filter by user ID' })
-  @ApiQuery({ name: 'status', required: false, description: 'Filter by ticket status' })
-  @ApiQuery({ name: 'ticketType', required: false, description: 'Filter by ticket type' })
-  @ApiResponse({ status: 200, description: 'List of tickets retrieved successfully' })
+  @ApiQuery({
+    name: 'eventId',
+    required: false,
+    description: 'Filter by event ID',
+  })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    description: 'Filter by user ID',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by ticket status',
+  })
+  @ApiQuery({
+    name: 'ticketType',
+    required: false,
+    description: 'Filter by ticket type',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of tickets retrieved successfully',
+  })
   async findAll(@Query() query: any) {
     return this.ticketsService.findAll(query);
   }
 
   @Get('active')
   @ApiOperation({ summary: 'Get all active tickets' })
-  @ApiResponse({ status: 200, description: 'List of active tickets retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of active tickets retrieved successfully',
+  })
   async findActiveTickets() {
     return this.ticketsService.findActiveTickets();
   }
@@ -92,20 +133,25 @@ export class TicketsController {
   @Get('event/:eventId')
   @ApiOperation({ summary: 'Get tickets by event ID' })
   @ApiParam({ name: 'eventId', description: 'Event ID' })
-  @ApiResponse({ status: 200, description: 'List of tickets for event retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of tickets for event retrieved successfully',
+  })
   async findByEvent(@Param('eventId') eventId: string) {
     return this.ticketsService.findByEvent(eventId);
   }
 
   @Get('user/:userId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get tickets by user ID with event details',
-    description: 'Retrieves all tickets for a specific user with complete event information including cultural place details'
+    description:
+      'Retrieves all tickets for a specific user with complete event information including cultural place details',
   })
   @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'List of tickets for user retrieved successfully with event and cultural place details',
+  @ApiResponse({
+    status: 200,
+    description:
+      'List of tickets for user retrieved successfully with event and cultural place details',
     schema: {
       type: 'array',
       items: {
@@ -117,37 +163,49 @@ export class TicketsController {
             properties: {
               _id: { type: 'string', example: '68cb3f47a7999cce8e8e8079' },
               name: { type: 'string', example: 'Concierto de Jazz' },
-              description: { type: 'string', example: 'Descripción del evento...' },
+              description: {
+                type: 'string',
+                example: 'Descripción del evento...',
+              },
               date: { type: 'string', format: 'date', example: '2024-02-15' },
               time: { type: 'string', example: '20:00' },
-              image: { 
+              image: {
                 type: 'string',
-                example: 'https://mi-backend.com/uploads/events/concierto-jazz.jpg'
+                example:
+                  'https://mi-backend.com/uploads/events/concierto-jazz.jpg',
               },
               culturalPlaceId: {
                 type: 'object',
                 properties: {
                   _id: { type: 'string', example: 'place_id_789' },
                   name: { type: 'string', example: 'Teatro Colón' },
-                  address: { type: 'string', example: 'Cerrito 628, C1010 CABA' },
-                  image: { 
+                  address: {
                     type: 'string',
-                    example: 'https://mi-backend.com/uploads/places/teatro-colon.jpg'
-                  }
-                }
-              }
-            }
+                    example: 'Cerrito 628, C1010 CABA',
+                  },
+                  image: {
+                    type: 'string',
+                    example:
+                      'https://mi-backend.com/uploads/places/teatro-colon.jpg',
+                  },
+                },
+              },
+            },
           },
           userId: { type: 'string', example: 'user_id_123' },
           ticketType: { type: 'string', example: 'general' },
           price: { type: 'number', example: 2500 },
           status: { type: 'string', example: 'active' },
-          purchaseDate: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' },
+          purchaseDate: {
+            type: 'string',
+            format: 'date-time',
+            example: '2024-01-15T10:30:00Z',
+          },
           qrCode: { type: 'string', example: 'QR_CODE_STRING' },
-          isActive: { type: 'boolean', example: true }
-        }
-      }
-    }
+          isActive: { type: 'boolean', example: true },
+        },
+      },
+    },
   })
   async findByUser(@Param('userId') userId: string) {
     return this.ticketsService.findByUserWithEventDetails(userId);
@@ -157,7 +215,10 @@ export class TicketsController {
   @ApiOperation({ summary: 'Get tickets by event and user ID' })
   @ApiParam({ name: 'eventId', description: 'Event ID' })
   @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiResponse({ status: 200, description: 'List of tickets for event and user retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of tickets for event and user retrieved successfully',
+  })
   async findByEventAndUser(
     @Param('eventId') eventId: string,
     @Param('userId') userId: string,
@@ -167,8 +228,14 @@ export class TicketsController {
 
   @Get('status/:status')
   @ApiOperation({ summary: 'Get tickets by status' })
-  @ApiParam({ name: 'status', description: 'Ticket status (active, used, cancelled)' })
-  @ApiResponse({ status: 200, description: 'List of tickets by status retrieved successfully' })
+  @ApiParam({
+    name: 'status',
+    description: 'Ticket status (active, used, cancelled)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of tickets by status retrieved successfully',
+  })
   async findByStatus(@Param('status') status: string) {
     return this.ticketsService.findByStatus(status);
   }
@@ -176,7 +243,10 @@ export class TicketsController {
   @Get('event/:eventId/stats')
   @ApiOperation({ summary: 'Get ticket statistics for an event' })
   @ApiParam({ name: 'eventId', description: 'Event ID' })
-  @ApiResponse({ status: 200, description: 'Ticket statistics retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ticket statistics retrieved successfully',
+  })
   async getTicketStats(@Param('eventId') eventId: string) {
     return this.ticketsService.getTicketStats(eventId);
   }
@@ -197,9 +267,15 @@ export class TicketsController {
   @Patch(':id/use')
   @ApiOperation({ summary: 'Mark a ticket as used' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
-  @ApiResponse({ status: 200, description: 'Ticket marked as used successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ticket marked as used successfully',
+  })
   @ApiResponse({ status: 404, description: 'Ticket not found' })
-  @ApiResponse({ status: 400, description: 'Bad request - ticket is not active' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - ticket is not active',
+  })
   async markAsUsed(@Param('id') id: string) {
     return this.ticketsService.markAsUsed(id);
   }
@@ -209,7 +285,10 @@ export class TicketsController {
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   @ApiResponse({ status: 200, description: 'Ticket cancelled successfully' })
   @ApiResponse({ status: 404, description: 'Ticket not found' })
-  @ApiResponse({ status: 400, description: 'Bad request - ticket is not active' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - ticket is not active',
+  })
   async cancelTicket(
     @Param('id') id: string,
     @Body() body: { reason?: string },
@@ -226,5 +305,4 @@ export class TicketsController {
   async remove(@Param('id') id: string) {
     await this.ticketsService.remove(id);
   }
-
 }
