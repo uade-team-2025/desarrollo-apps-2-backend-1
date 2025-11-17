@@ -3,21 +3,22 @@ const amqp = require('amqplib');
 
 const url = 'amqp://admin:admin@cultura-rabbit.diaznicolasandres.com:5672';
 const exchange = 'citypass_def';
-const routingKey = 'movilidad.estaciones.lista';
+const routingKey = 'emergencias.inundacion.creado';
 
 const message = {
-  station: {
-    _id: '507f1f77bcf86cd799439011',
-    name: 'Estación Central',
-    location: {
-      type: 'Point',
-      coordinates: [-58.3816, -34.6037],
-    },
-    capacity: 20,
-    bikesCount: 10,
-    status: 'active',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+  evento: 'inundacion',
+  version: '1.0',
+  origen_modulo: 'emergencias',
+  ocurrio_en: '2025-11-16T18:07:00.344Z',
+  emitido_en: '2025-11-16T18:07:00.477Z',
+  id_evento: 'evt_691a12c411c011dd216ef760',
+  payload: {
+    alerta_id: '691a12c411c011dd216ef760',
+    usuario_id: '507f1f77bcf86cd799439011',
+    lat: -34.6029,
+    lng: -58.3816,
+    zona_id: '',
+    timestamp: '2025-11-16T18:07:00.344Z',
   },
 };
 

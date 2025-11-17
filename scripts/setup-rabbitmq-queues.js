@@ -14,6 +14,18 @@ const queuesAndRoutingKeys = [
     queue: 'residuos.camion.posicion',
     routingKey: 'residuos.camion.posicion',
   },
+  {
+    queue: 'reclamos.plazaviva',
+    routingKey: 'reclamos.plazaviva',
+  },
+  {
+    queue: 'reclamos.ciudad.transparente',
+    routingKey: 'reclamos.ciudad.transparente',
+  },
+  {
+    queue: 'emergencias.inundacion.creado',
+    routingKey: 'emergencias.inundacion.creado',
+  },
 ];
 
 async function setupQueues() {
