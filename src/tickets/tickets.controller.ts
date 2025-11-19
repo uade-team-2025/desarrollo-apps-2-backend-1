@@ -18,6 +18,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LdapAuthGuard } from '../auth/guards/ldap-auth.guard';
 import { PurchaseMultipleTicketsDto } from './dto/purchase-multiple-tickets.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
@@ -25,11 +26,11 @@ import { TicketsService } from './tickets.service';
 
 @ApiTags('tickets')
 @Controller('tickets')
-@UseGuards(LdapAuthGuard)
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   @Post('purchase')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Purchase multiple tickets for different events and types',
@@ -82,6 +83,7 @@ export class TicketsController {
   }
 
   @Get()
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Get all tickets with optional filtering' })
   @ApiQuery({
     name: 'eventId',
@@ -112,6 +114,7 @@ export class TicketsController {
   }
 
   @Get('active')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Get all active tickets' })
   @ApiResponse({
     status: 200,
@@ -122,6 +125,7 @@ export class TicketsController {
   }
 
   @Get(':id')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Get a ticket by ID' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   @ApiResponse({ status: 200, description: 'Ticket retrieved successfully' })
@@ -131,6 +135,7 @@ export class TicketsController {
   }
 
   @Get('event/:eventId')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Get tickets by event ID' })
   @ApiParam({ name: 'eventId', description: 'Event ID' })
   @ApiResponse({
@@ -142,6 +147,7 @@ export class TicketsController {
   }
 
   @Get('user/:userId')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({
     summary: 'Get tickets by user ID with event details',
     description:
@@ -212,6 +218,7 @@ export class TicketsController {
   }
 
   @Get('event/:eventId/user/:userId')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Get tickets by event and user ID' })
   @ApiParam({ name: 'eventId', description: 'Event ID' })
   @ApiParam({ name: 'userId', description: 'User ID' })
@@ -227,6 +234,7 @@ export class TicketsController {
   }
 
   @Get('status/:status')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Get tickets by status' })
   @ApiParam({
     name: 'status',
@@ -241,6 +249,7 @@ export class TicketsController {
   }
 
   @Get('event/:eventId/stats')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Get ticket statistics for an event' })
   @ApiParam({ name: 'eventId', description: 'Event ID' })
   @ApiResponse({
@@ -252,6 +261,7 @@ export class TicketsController {
   }
 
   @Patch(':id')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Update a ticket' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   @ApiResponse({ status: 200, description: 'Ticket updated successfully' })
@@ -265,6 +275,7 @@ export class TicketsController {
   }
 
   @Patch(':id/use')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Mark a ticket as used' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   @ApiResponse({
@@ -281,6 +292,7 @@ export class TicketsController {
   }
 
   @Patch(':id/cancel')
+  @UseGuards(LdapAuthGuard)
   @ApiOperation({ summary: 'Cancel a ticket' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   @ApiResponse({ status: 200, description: 'Ticket cancelled successfully' })
@@ -297,6 +309,7 @@ export class TicketsController {
   }
 
   @Delete(':id')
+  @UseGuards(LdapAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a ticket by ID' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
