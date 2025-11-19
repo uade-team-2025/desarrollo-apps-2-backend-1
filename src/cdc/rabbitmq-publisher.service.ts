@@ -34,24 +34,79 @@ export class RabbitMqPublisherService implements OnModuleInit, OnModuleDestroy {
       await this.channel.assertExchange(exchange, 'topic', { durable: true });
 
       const queuesAndRoutingKeys = [
+        // Eventos de cultura
         { queue: 'cultura.events.crear', routingKey: 'cultura.events.crear' },
+        {
+          queue: 'cultura.events.crear.eda',
+          routingKey: 'cultura.events.crear',
+        },
+        {
+          queue: 'cultura.events.crear.interno',
+          routingKey: 'cultura.events.crear',
+        },
         {
           queue: 'cultura.events.modificar',
           routingKey: 'cultura.events.modificar',
         },
         {
+          queue: 'cultura.events.modificar.eda',
+          routingKey: 'cultura.events.modificar',
+        },
+        {
+          queue: 'cultura.events.modificar.interno',
+          routingKey: 'cultura.events.modificar',
+        },
+
+        // Lugares culturales
+        {
           queue: 'cultura.culturalplaces.crear',
+          routingKey: 'cultura.culturalplaces.crear',
+        },
+        {
+          queue: 'cultura.culturalplaces.crear.eda',
+          routingKey: 'cultura.culturalplaces.crear',
+        },
+        {
+          queue: 'cultura.culturalplaces.crear.interno',
           routingKey: 'cultura.culturalplaces.crear',
         },
         {
           queue: 'cultura.culturalplaces.modificar',
           routingKey: 'cultura.culturalplaces.modificar',
         },
+        {
+          queue: 'cultura.culturalplaces.modificar.eda',
+          routingKey: 'cultura.culturalplaces.modificar',
+        },
+        {
+          queue: 'cultura.culturalplaces.modificar.interno',
+          routingKey: 'cultura.culturalplaces.modificar',
+        },
+
+        // Tickets
         { queue: 'cultura.tickets.crear', routingKey: 'cultura.tickets.crear' },
+        {
+          queue: 'cultura.tickets.crear.eda',
+          routingKey: 'cultura.tickets.crear',
+        },
+        {
+          queue: 'cultura.tickets.crear.interno',
+          routingKey: 'cultura.tickets.crear',
+        },
         {
           queue: 'cultura.tickets.modificar',
           routingKey: 'cultura.tickets.modificar',
         },
+        {
+          queue: 'cultura.tickets.modificar.eda',
+          routingKey: 'cultura.tickets.modificar',
+        },
+        {
+          queue: 'cultura.tickets.modificar.interno',
+          routingKey: 'cultura.tickets.modificar',
+        },
+
+        // Otros dominios que ya exponés (se mantienen como estaban)
         {
           queue: 'movilidad.estaciones.festivalverde',
           routingKey: 'movilidad.estaciones.festivalverde',
