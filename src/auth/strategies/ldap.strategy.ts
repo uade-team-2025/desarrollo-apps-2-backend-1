@@ -57,7 +57,13 @@ export class LdapStrategy extends PassportStrategy(Strategy, 'ldap') {
         body: JSON.stringify(requestBody),
       });
 
-      const result: any = await response.json().catch(() => ({}));
+      const responseText = await response.text();
+      let result: any;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        result = { rawResponse: responseText };
+      }
 
       const isTokenValid = (response: Response, result: any): boolean => {
         if (response.ok) {
@@ -91,14 +97,18 @@ export class LdapStrategy extends PassportStrategy(Strategy, 'ldap') {
               body: JSON.stringify(format.body || {}),
             });
 
-            const altResult: any = await altResponse.json().catch(() => ({}));
+            const altResponseText = await altResponse.text();
+            let altResult: any;
+            try {
+              altResult = JSON.parse(altResponseText);
+            } catch {
+              altResult = { rawResponse: altResponseText };
+            }
 
             if (isTokenValid(altResponse, altResult)) {
               return await this.createOrUpdateUser(token);
-            } else {
-              // Si no es válido, continuar probando con otros formatos
             }
-          } catch (formatError) {
+          } catch {
             // Ignorar errores específicos de formato y continuar
           }
         }
@@ -107,14 +117,14 @@ export class LdapStrategy extends PassportStrategy(Strategy, 'ldap') {
       }
 
       // Decodificar el JWT sin verificar la firma (el endpoint ya lo validó)
-      let payload: any;
-      payload = this.decodeJwtPayload(token);
+      this.decodeJwtPayload(token);
 
       return await this.createOrUpdateUser(token);
     } catch (error) {
-      throw error instanceof UnauthorizedException
-        ? error
-        : new UnauthorizedException('Error al validar token LDAP');
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Error al validar token LDAP');
     }
   }
 
@@ -166,9 +176,17 @@ export class LdapStrategy extends PassportStrategy(Strategy, 'ldap') {
       // Decodificar el payload (segunda parte)
       const payload = parts[1];
       let decoded: string;
-      decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+      try {
+        decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+      } catch {
+        throw new Error('Error al decodificar base64url del payload');
+      }
 
-      return JSON.parse(decoded);
+      try {
+        return JSON.parse(decoded);
+      } catch {
+        throw new Error('Error al parsear JSON del payload');
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Error desconocido';
