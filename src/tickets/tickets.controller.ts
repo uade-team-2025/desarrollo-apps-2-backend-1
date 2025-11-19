@@ -18,6 +18,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { AnyAuthGuard } from '../auth/guards/any-auth.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LdapAuthGuard } from '../auth/guards/ldap-auth.guard';
 import { PurchaseMultipleTicketsDto } from './dto/purchase-multiple-tickets.dto';
@@ -125,7 +126,7 @@ export class TicketsController {
   }
 
   @Get(':id')
-  @UseGuards(LdapAuthGuard)
+  @UseGuards(AnyAuthGuard)
   @ApiOperation({ summary: 'Get a ticket by ID' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   @ApiResponse({ status: 200, description: 'Ticket retrieved successfully' })
@@ -147,7 +148,7 @@ export class TicketsController {
   }
 
   @Get('user/:userId')
-  @UseGuards(LdapAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Get tickets by user ID with event details',
     description:
@@ -275,7 +276,7 @@ export class TicketsController {
   }
 
   @Patch(':id/use')
-  @UseGuards(LdapAuthGuard)
+  @UseGuards(AnyAuthGuard)
   @ApiOperation({ summary: 'Mark a ticket as used' })
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   @ApiResponse({

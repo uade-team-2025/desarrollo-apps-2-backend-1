@@ -92,11 +92,13 @@ export class UserController {
   }
 
   @Get()
+  @UseGuards(LdapAuthGuard)
   async findAll() {
     return this.userService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(LdapAuthGuard)
   async findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
   }
