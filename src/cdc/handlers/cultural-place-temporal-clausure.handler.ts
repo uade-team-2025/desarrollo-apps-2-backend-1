@@ -38,14 +38,17 @@ export class CulturalPlaceTemporalClausureHandler implements CulturalPlaceChange
     const now = new Date();
     const localTime = new Date(now.getTime() - 4 * 60 * 60 * 1000); // Restar 4 horas en milisegundos
     
-    // Calcular inicio y fin del día en hora local de Argentina
-    const startOfDay = new Date(localTime);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(localTime);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Calcular inicio del día previo (ayer) y fin del día siguiente (mañana)
+    const startOfPreviousDay = new Date(localTime);
+    startOfPreviousDay.setDate(startOfPreviousDay.getDate() - 2);
+    startOfPreviousDay.setHours(0, 0, 0, 0);
+    
+    const endOfNextDay = new Date(localTime);
+    endOfNextDay.setDate(endOfNextDay.getDate() + 2);
+    endOfNextDay.setHours(23, 59, 59, 999);
 
     this.logger.log(
-      `Cultural place ${culturalPlaceId} temporarily closed. Pausing today's events between ${startOfDay.toISOString()} and ${endOfDay.toISOString()}.`,
+      `Cultural place ${culturalPlaceId} temporarily closed. Pausing events from previous day, today, and next day between ${startOfPreviousDay.toISOString()} and ${endOfNextDay.toISOString()}.`,
     );
 
     const modifiedCount = await this.eventRepository.updateManyByCulturalPlace(
@@ -56,15 +59,15 @@ export class CulturalPlaceTemporalClausureHandler implements CulturalPlaceChange
       },
       {
         date: {
-          $gte: startOfDay,
-          $lte: endOfDay,
+          $gte: startOfPreviousDay,
+          $lte: endOfNextDay,
         },
         isActive: true,
       },
     );
 
     this.logger.log(
-      `Events temporarily paused for cultural place ${culturalPlaceId} (today only): ${modifiedCount}`,
+      `Events temporarily paused for cultural place ${culturalPlaceId} (previous day, today, and next day): ${modifiedCount}`,
     );
   }
 }

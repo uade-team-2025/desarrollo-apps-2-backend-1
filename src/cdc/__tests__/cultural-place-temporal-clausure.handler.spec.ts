@@ -59,7 +59,7 @@ describe('CulturalPlaceTemporalClausureHandler', () => {
   });
 
   describe('handle', () => {
-    it('pauses only today events', async () => {
+    it('pauses events from previous day, today, and next day', async () => {
       repositoryMock.updateManyByCulturalPlace.mockResolvedValue(1);
       const fakeNow = new Date('2025-01-15T12:00:00.000Z');
       jest.useFakeTimers().setSystemTime(fakeNow);
@@ -86,6 +86,30 @@ describe('CulturalPlaceTemporalClausureHandler', () => {
           isActive: true,
         }),
       );
+
+      // Verificar que el rango de fechas incluye día previo, actual y siguiente
+      const callArgs = repositoryMock.updateManyByCulturalPlace.mock.calls[0];
+      const dateFilter = callArgs[2].date;
+      const startDate = dateFilter.$gte;
+      const endDate = dateFilter.$lte;
+      
+      // Calcular las fechas esperadas de la misma manera que el handler
+      const localTime = new Date(fakeNow.getTime() - 4 * 60 * 60 * 1000);
+      const expectedStartOfPreviousDay = new Date(localTime);
+      expectedStartOfPreviousDay.setDate(expectedStartOfPreviousDay.getDate() - 1);
+      expectedStartOfPreviousDay.setHours(0, 0, 0, 0);
+      
+      const expectedEndOfNextDay = new Date(localTime);
+      expectedEndOfNextDay.setDate(expectedEndOfNextDay.getDate() + 1);
+      expectedEndOfNextDay.setHours(23, 59, 59, 999);
+      
+      // Verificar que las fechas coinciden
+      expect(startDate.getTime()).toBe(expectedStartOfPreviousDay.getTime());
+      expect(endDate.getTime()).toBe(expectedEndOfNextDay.getTime());
+      
+      // Verificar que el rango es de aproximadamente 3 días (diferencia de ~72 horas)
+      const diffInHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+      expect(diffInHours).toBeCloseTo(72, 0); // Aproximadamente 72 horas (3 días)
 
       jest.useRealTimers();
     });
