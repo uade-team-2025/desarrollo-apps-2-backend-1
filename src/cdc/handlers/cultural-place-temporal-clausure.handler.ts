@@ -34,10 +34,14 @@ export class CulturalPlaceTemporalClausureHandler implements CulturalPlaceChange
       return;
     }
 
+    // Obtener la fecha actual y restar 4 horas para ajustar a la zona horaria de Argentina
     const now = new Date();
-    const startOfDay = new Date(now);
+    const localTime = new Date(now.getTime() - 4 * 60 * 60 * 1000); // Restar 4 horas en milisegundos
+    
+    // Calcular inicio y fin del día en hora local de Argentina
+    const startOfDay = new Date(localTime);
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(now);
+    const endOfDay = new Date(localTime);
     endOfDay.setHours(23, 59, 59, 999);
 
     this.logger.log(
