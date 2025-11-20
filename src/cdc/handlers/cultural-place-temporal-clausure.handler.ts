@@ -38,7 +38,7 @@ export class CulturalPlaceTemporalClausureHandler implements CulturalPlaceChange
     const now = new Date();
     const localTime = new Date(now.getTime() - 4 * 60 * 60 * 1000); // Restar 4 horas en milisegundos
     
-    // Calcular inicio del día previo (ayer) y fin del día siguiente (mañana)
+    // Calcular inicio de 2 días antes y fin de 2 días después
     const startOfPreviousDay = new Date(localTime);
     startOfPreviousDay.setDate(startOfPreviousDay.getDate() - 2);
     startOfPreviousDay.setHours(0, 0, 0, 0);
@@ -48,7 +48,7 @@ export class CulturalPlaceTemporalClausureHandler implements CulturalPlaceChange
     endOfNextDay.setHours(23, 59, 59, 999);
 
     this.logger.log(
-      `Cultural place ${culturalPlaceId} temporarily closed. Pausing events from previous day, today, and next day between ${startOfPreviousDay.toISOString()} and ${endOfNextDay.toISOString()}.`,
+      `Cultural place ${culturalPlaceId} temporarily closed. Pausing events from 2 days before, previous day, today, next day, and 2 days after between ${startOfPreviousDay.toISOString()} and ${endOfNextDay.toISOString()}.`,
     );
 
     const modifiedCount = await this.eventRepository.updateManyByCulturalPlace(
@@ -67,7 +67,7 @@ export class CulturalPlaceTemporalClausureHandler implements CulturalPlaceChange
     );
 
     this.logger.log(
-      `Events temporarily paused for cultural place ${culturalPlaceId} (previous day, today, and next day): ${modifiedCount}`,
+      `Events temporarily paused for cultural place ${culturalPlaceId} (2 days before, previous day, today, next day, and 2 days after): ${modifiedCount}`,
     );
   }
 }

@@ -20,7 +20,7 @@ Notas:
 | --- | --- | --- | --- |
 | `ACTIVE` | Creación, reactivaciones | Centro operativo | Los eventos vuelven a estar disponibles (se reactivan). |
 | `CLOSED_DOWN` | Endpoints de cancelación (definitiva) | Clausura definitiva | Se cancelan todos los eventos futuros del centro (`PAUSED_BY_CLOSURE`). |
-| `TEMPORAL_CLOSED_DOWN` | Endpoints de cancelación (temporal) | Clausura temporal (se cancelan los eventos programados para el día previo, actual y siguiente) | Los eventos del día previo, actual y siguiente se marcan como `TEMPORAL_PAUSED`; el resto permanece igual. |
+| `TEMPORAL_CLOSED_DOWN` | Endpoints de cancelación (temporal) | Clausura temporal (se cancelan los eventos programados para 2 días antes, día previo, actual, día siguiente y 2 días después) | Los eventos de 2 días antes, día previo, actual, día siguiente y 2 días después se marcan como `TEMPORAL_PAUSED`; el resto permanece igual. |
 
 ## Ejemplos cURL
 
@@ -51,7 +51,7 @@ curl -X POST https://<host>/cultural-places/cancel-by-range \
 2. El servicio localiza el centro (por coordenada o rango), actualiza `status` e `isActive`.
 3. Dependiendo del nuevo estado:
    - `CLOSED_DOWN`: todos los eventos del centro se cancelan.
-   - `TEMPORAL_CLOSED_DOWN`: se cancelan los eventos del día previo, actual y siguiente.
+   - `TEMPORAL_CLOSED_DOWN`: se cancelan los eventos de 2 días antes, día previo, actual, día siguiente y 2 días después.
    - `ACTIVE`: los eventos se reactivan normalmente.
 
 
