@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 const amqp = require('amqplib');
 
-const url = 'amqp://admin:admin@cultura-rabbit.diaznicolasandres.com:5672';
+const url = 'amqp://user_cultura:pass_cultura@3.87.100.222:5672';
 const exchange = 'citypass_def';
-const routingKey = 'cultura.events.crear';
+const routingKey = 'cultura.evento.crear';
 
 // Mock de un evento creado (basado en el log del backend)
 const message = {
@@ -15,9 +15,8 @@ const message = {
     _id: '691a25b3c953e68977ad9354',
     culturalPlaceId: {
       _id: '68d44759b05e86754239e756',
-      name: 'Espacio Aguirre',
-      description:
-        'Espacio Aguirre es un teatro y escuela de clown ubicado en Palermo. Ofrece obras de teatro, talleres de clown y eventos culturales en un espacio no convencional con capacidad para 90 personas.',
+      name: ' MOCKEADO NO DAR BOLA',
+      description: '',
       category: 'Teatro',
       characteristics: [
         'Teatro',

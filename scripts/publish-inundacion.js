@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 const amqp = require('amqplib');
 
-const url = 'amqp://admin:admin@cultura-rabbit.diaznicolasandres.com:5672';
+const url = 'amqp://user_cultura:pass_cultura@3.87.100.222:5672';
 const exchange = 'citypass_def';
-const routingKey = 'emergencias.inundacion.creado';
+const routingKey = 'emergencias.inundacion.pendiente';
 
 const message = {
-  evento: 'inundacion',
-  version: '1.0',
-  origen_modulo: 'emergencias',
-  ocurrio_en: '2025-11-16T18:07:00.344Z',
-  emitido_en: '2025-11-16T18:07:00.477Z',
-  id_evento: 'evt_691a12c411c011dd216ef760',
+  id: '691d37c12a2a7a5b54bd4b45',
+  timestamp: new Date().toISOString(),
+  source: 'emergencias',
+  topic: 'emergencias.inundacion.pendiente',
   payload: {
-    alerta_id: '691a12c411c011dd216ef760',
-    usuario_id: '507f1f77bcf86cd799439011',
-    lat: -34.6029,
-    lng: -58.3816,
-    zona_id: '',
-    timestamp: '2025-11-16T18:07:00.344Z',
+    prioridad: 'High',
+    estado: 'Pendiente',
+    tipo_emergencia: 'Inundacion',
+    lat: -34.616844894500375,
+    lng: -58.38191860290056,
+    contexto: 'prueba7',
+    comuna: 1,
+    id_reclamo: '691d37c12a2a7a5b54bd4b45',
   },
 };
 
@@ -29,9 +29,16 @@ async function send() {
     const ch = await conn.createChannel();
 
     // Publicar el mensaje
-    ch.publish(exchange, routingKey, Buffer.from(JSON.stringify(message)), {
-      persistent: true,
-    });
+    ch.publish(
+      exchange,
+      routingKey,
+      Buffer.from(
+        '{"id":"691e006529e50cb062f3fa99","timestamp":"2025-11-19T17:37:41.009Z","source":"emergencias","topic":"emergencias.inundacion.pendiente","payload":{"prioridad":"High","estado":"Pendiente","tipo_emergencia":"Inundacion","lat":-34.616844894500375,"lng":-58.38191860290056,"contexto":"prueba11","comuna":1,"id_reclamo":"691e006529e50cb062f3fa99"}}',
+      ),
+      {
+        persistent: true,
+      },
+    );
     console.log(JSON.stringify(message, null, 2));
 
     console.log(

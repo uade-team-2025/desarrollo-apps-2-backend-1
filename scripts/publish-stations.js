@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 const amqp = require('amqplib');
 
-const url = 'amqp://admin:admin@cultura-rabbit.diaznicolasandres.com:5672';
+const url = 'amqp://user_cultura:pass_cultura@52.202.19.205:5672';
 const exchange = 'citypass_def';
 const routingKey = 'movilidad.estaciones.lista';
 
 const message = {
-  eventId: '68d44d2663d135b1b22cb970',
+  eventId: '691f63bc6fab2549f2251b83',
   stations: [
     {
       _id: '507f1f77bcf86cd799439011',
@@ -22,31 +22,32 @@ const message = {
       updatedAt: new Date().toISOString(),
     },
     {
+      _id: '507f1f77bcf86cd799439012',
       name: 'Estación Norte',
       location: {
         type: 'Point',
         coordinates: [-58.3916, -34.5937],
       },
-      capacity: 15,
-      bikesCount: 10,
+      capacity: 20,
+      bikesCount: 15,
       status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
     {
-      name: 'Estación Sur',
+      _id: '507f1f77bcf86cd799439013',
+      name: 'Estación Central',
       location: {
         type: 'Point',
         coordinates: [-58.3716, -34.6137],
       },
-      capacity: 18,
-      bikesCount: 12,
+      capacity: 20,
+      bikesCount: 15,
       status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
   ],
-  metadata: {
-    mode: 'bulk',
-    sentAt: new Date().toISOString(),
-    totalStations: 3,
-  },
 };
 
 async function send() {
